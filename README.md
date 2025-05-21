@@ -4,7 +4,7 @@ Projeto da disciplina Linguagem de Programação 3.
 
 ## Rodando
 
-É necessário o JDK e o MySQL Server instalados.
+Necessários JDK e MySQL Server instalados.
 
 Rodar com os comandos:
 
@@ -15,7 +15,7 @@ java -cp ".:lib/mysql-connector-j-9.3.0.jar" Main
 
 ## Banco MySQL
 
-Usuário: root
+Usuário: root <br>
 Senha: 1234567890
 
-Ou alterar no código para as credenciais da sua máquina.
+Ou alterar no código pondo as credenciais da sua máquina.
