@@ -1,10 +1,11 @@
 import util.DatabaseSetup;
-import view.TelaKanban;
+import view.TelaLogin;
 
 public class Main {
     public static void main(String[] args) {
         DatabaseSetup.criarBanco();
-        DatabaseSetup.criarTabela();
-        new TelaKanban();
+        DatabaseSetup.criarTabelaUsuarios();
+         DatabaseSetup.criarTabela();
+        new TelaLogin();
     }
 }

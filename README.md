@@ -9,13 +9,11 @@ Necessários JDK e MySQL Server instalados.
 Rodar com os comandos:
 
 ````
-javac -cp "lib/mysql-connector-j-9.3.0.jar" /.java Main.java 
-java -cp ".:lib/mysql-connector-j-9.3.0.jar" Main
+javac -cp "lib/mysql-connector-j-9.3.0.jar:." Principal.java dao/ .java modelo/ .java util/ .java view/ .java java -cp ".:lib/mysql-connector-j-9.3.0.jar" Principal
 ````
 
 ## Banco MySQL
 
 Usuário: root <br>
-Senha: 1234567890
-
-Ou alterar no código pondo as credenciais da sua máquina.
+Senha: admin 
+```

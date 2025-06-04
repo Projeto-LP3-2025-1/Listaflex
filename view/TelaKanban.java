@@ -12,9 +12,12 @@ public class TelaKanban extends JFrame {
     private JPanel panelFazendo = new JPanel(new GridLayout(0, 1));
     private JPanel panelFeito = new JPanel(new GridLayout(0, 1));
     private AnotacaoDAO dao = new AnotacaoDAO();
+    private int loggedInUserId; // Campo para armazenar o ID do usuário logado
 
-    public TelaKanban() {
-        setTitle("Kanban de Anotações");
+    public TelaKanban(int userId) { // Construtor agora recebe o userId
+        this.loggedInUserId = userId; // Armazena o ID do usuário
+
+        setTitle("Kanban de Anotações - Usuário ID: " + userId); // Opcional: exibir ID na barra de título
         setSize(900, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -33,6 +36,7 @@ public class TelaKanban extends JFrame {
         kanban.add(criarColuna(panelFeito, "Feito"));
         add(kanban, BorderLayout.CENTER);
 
+        System.out.println("DEBUG: TelaKanban iniciada para o usuário ID: " + this.loggedInUserId);
         carregarAnotacoes();
         setVisible(true);
     }
@@ -62,8 +66,10 @@ public class TelaKanban extends JFrame {
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
-            Anotacao a = new Anotacao(titulo.getText(), descricao.getText(), (String) statusBox.getSelectedItem());
+            Anotacao a = new Anotacao(titulo.getText(), descricao.getText(), (String) statusBox.getSelectedItem(), this.loggedInUserId);
+            System.out.println("DEBUG: Tentando criar anotação na UI. UserID: " + a.getUserId() + ", Título: " + a.getTitulo());
             dao.inserir(a);
+            System.out.println("DEBUG: Chamando carregarAnotacoes() após inserção.");
             carregarAnotacoes();
         }
     }
@@ -73,8 +79,11 @@ public class TelaKanban extends JFrame {
         panelFazendo.removeAll();
         panelFeito.removeAll();
 
-        List<Anotacao> lista = dao.listar();
+        System.out.println("DEBUG: Carregando anotações para o usuário ID: " + this.loggedInUserId);
+        List<Anotacao> lista = dao.listar(this.loggedInUserId);
+        System.out.println("DEBUG: Anotações encontradas para o usuário ID " + this.loggedInUserId + ": " + lista.size());
         for (Anotacao a : lista) {
+            System.out.println("DEBUG:   - Anotação carregada: ID=" + a.getId() + ", Título='" + a.getTitulo() + "', Status='" + a.getStatus() + "', UserID=" + a.getUserId());
             JButton botao = new JButton("<html><b>" + a.getTitulo() + "</b><br>" + a.getDescricao() + "</html>");
             botao.addActionListener(e -> editarAnotacao(a));
             switch (a.getStatus()) {
@@ -109,13 +118,13 @@ public class TelaKanban extends JFrame {
             a.setTitulo(titulo.getText());
             a.setDescricao(descricao.getText());
             a.setStatus((String) statusBox.getSelectedItem());
-            dao.atualizar(a);
+            dao.atualizar(a); // user_id já está no objeto 'a'
             carregarAnotacoes();
         }
 
         int excluir = JOptionPane.showConfirmDialog(this, "Deseja excluir esta anotação?", "Excluir", JOptionPane.YES_NO_OPTION);
         if (excluir == JOptionPane.YES_OPTION) {
-            dao.excluir(a.getId());
+            dao.excluir(a.getId(), this.loggedInUserId);
             carregarAnotacoes();
         }
     }
