@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class DatabaseSetup {
+public class DatabaseSetup { // <-- Início da classe DatabaseSetup
     private static final String URL_SEM_BANCO = "jdbc:mysql://localhost:3306/?allowPublicKeyRetrieval=true&useSSL=false";
     private static final String USER = "root";
     private static final String PASSWORD = "admin"; // ALtere para a senha REAL do seu MySQL! (Ex: "1234567890")
@@ -21,22 +21,23 @@ public class DatabaseSetup {
         }
     }
 
+    // Este método criarTabela() deve estar AQUI DENTRO da classe DatabaseSetup
     public static void criarTabela() {
-        // Alterado: Adicionado 'user_id' e a chave estrangeira
         String sql = "CREATE TABLE IF NOT EXISTS anotacoes (" +
                      "id INT AUTO_INCREMENT PRIMARY KEY, " +
                      "titulo VARCHAR(100), " +
                      "descricao TEXT, " +
                      "status VARCHAR(20), " +
-                     "user_id INT, " + // Nova coluna para o ID do usuário
-                     "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE" + // Chave estrangeira
+                     "user_id INT, " +
+                     "tipo_lista VARCHAR(20), " + // <-- NOVA COLUNA
+                     "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE" +
                      ")";
         try (Connection conn = DatabaseConnection.connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
             System.out.println("Tabela 'anotacoes' criada ou já existe.");
         } catch (SQLException e) {
-            System.err.println("Erro ao criar tabela: " + e.getMessage());
+            System.err.println("Erro ao criar tabela 'anotacoes': " + e.getMessage());
         }
     }
 
@@ -54,4 +55,4 @@ public class DatabaseSetup {
             System.err.println("Erro ao criar tabela de usuários: " + e.getMessage());
         }
     }
-}
+} // <-- Fim da classe DatabaseSetup
