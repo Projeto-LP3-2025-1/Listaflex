@@ -8,17 +8,17 @@ import util.DatabaseConnection;
 public class AnotacaoDAO {
 
     public void inserir(Anotacao a) {
-        // Alterado: Adicionado 'tipo_lista' na query
-        String sql = "INSERT INTO anotacoes (titulo, descricao, status, user_id, tipo_lista) VALUES (?, ?, ?, ?, ?)";
+        // Alterado: Adicionado 'prioridade' na query
+        String sql = "INSERT INTO anotacoes (titulo, descricao, status, list_id, prioridade) VALUES (?, ?, ?, ?, ?)";
         System.out.println("DEBUG: Tentando inserir Anotação.");
-        System.out.println("DEBUG: Título: " + a.getTitulo() + ", Descrição: " + a.getDescricao() + ", Status: " + a.getStatus() + ", UserID: " + a.getUserId() + ", Tipo: " + a.getTipoLista());
+        System.out.println("DEBUG: Título: " + a.getTitulo() + ", Descrição: " + a.getDescricao() + ", Status: " + a.getStatus() + ", ListID: " + a.getListId() + ", Prioridade: " + a.getPrioridade());
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, a.getTitulo());
             stmt.setString(2, a.getDescricao());
             stmt.setString(3, a.getStatus());
-            stmt.setInt(4, a.getUserId());
-            stmt.setString(5, a.getTipoLista()); // Definir o tipo_lista
+            stmt.setInt(4, a.getListId());
+            stmt.setString(5, a.getPrioridade()); // Define a prioridade
             int rowsAffected = stmt.executeUpdate();
             System.out.println("DEBUG: Linhas afetadas pela inserção: " + rowsAffected);
 
@@ -39,15 +39,14 @@ public class AnotacaoDAO {
         }
     }
 
-    // Método listar que recebe o tipo de lista
-    public List<Anotacao> listar(int userId, String tipoLista) {
+    public List<Anotacao> listar(int listId) {
         List<Anotacao> lista = new ArrayList<>();
-        String sql = "SELECT * FROM anotacoes WHERE user_id = ? AND tipo_lista = ?";
-        System.out.println("DEBUG: Executando listar para UserID: " + userId + ", Tipo: " + tipoLista);
+        // Alterado: Seleciona também a prioridade
+        String sql = "SELECT * FROM anotacoes WHERE list_id = ?";
+        System.out.println("DEBUG: Executando listar para ListID: " + listId);
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            stmt.setString(2, tipoLista);
+            stmt.setInt(1, listId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     lista.add(new Anotacao(
@@ -55,8 +54,8 @@ public class AnotacaoDAO {
                         rs.getString("titulo"),
                         rs.getString("descricao"),
                         rs.getString("status"),
-                        rs.getInt("user_id"),
-                        rs.getString("tipo_lista")
+                        rs.getInt("list_id"),
+                        rs.getString("prioridade") // Obtém a prioridade do ResultSet
                     ));
                 }
             }
@@ -70,19 +69,49 @@ public class AnotacaoDAO {
         return lista;
     }
 
-    // Os métodos atualizar e excluir devem começar AQUI, DENTRO da classe AnotacaoDAO.
-    // NÃO DEVE HAVER UMA CHAVE } ANTES DESTE MÉTODO.
+    // NOVO MÉTODO: Listar e ordenar por prioridade (para a lista comum)
+    public List<Anotacao> listarEOrdenarPorPrioridade(int listId) {
+        List<Anotacao> lista = new ArrayList<>();
+        // Ordena pela prioridade. Defina a ordem que quiser (ex: MUITO_IMPORTANTE primeiro)
+        String sql = "SELECT * FROM anotacoes WHERE list_id = ? ORDER BY CASE prioridade WHEN 'MUITO_IMPORTANTE' THEN 1 WHEN 'IMPORTANTE' THEN 2 WHEN 'POUCO_IMPORTANTE' THEN 3 ELSE 4 END";
+        System.out.println("DEBUG: Executando listar e ordenar por prioridade para ListID: " + listId);
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, listId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(new Anotacao(
+                        rs.getInt("id"),
+                        rs.getString("titulo"),
+                        rs.getString("descricao"),
+                        rs.getString("status"),
+                        rs.getInt("list_id"),
+                        rs.getString("prioridade")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("ERRO SQL ao listar e ordenar por prioridade:");
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("ERRO GERAL ao listar e ordenar por prioridade:");
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
     public void atualizar(Anotacao a) {
-        String sql = "UPDATE anotacoes SET titulo=?, descricao=?, status=?, tipo_lista=? WHERE id=? AND user_id=?";
-        System.out.println("DEBUG: Tentando atualizar Anotação ID: " + a.getId() + ", UserID: " + a.getUserId() + ", Tipo: " + a.getTipoLista());
+        // Alterado: Adicionado 'prioridade' na query de atualização
+        String sql = "UPDATE anotacoes SET titulo=?, descricao=?, status=?, prioridade=? WHERE id=? AND list_id=?";
+        System.out.println("DEBUG: Tentando atualizar Anotação ID: " + a.getId() + ", ListID: " + a.getListId() + ", Prioridade: " + a.getPrioridade());
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, a.getTitulo());
             stmt.setString(2, a.getDescricao());
             stmt.setString(3, a.getStatus());
-            stmt.setString(4, a.getTipoLista());
+            stmt.setString(4, a.getPrioridade()); // Atualiza a prioridade
             stmt.setInt(5, a.getId());
-            stmt.setInt(6, a.getUserId());
+            stmt.setInt(6, a.getListId());
             int rowsAffected = stmt.executeUpdate();
             System.out.println("DEBUG: Linhas afetadas pela atualização: " + rowsAffected);
         } catch (SQLException e) {
@@ -94,13 +123,13 @@ public class AnotacaoDAO {
         }
     }
 
-    public void excluir(int id, int userId) {
-        String sql = "DELETE FROM anotacoes WHERE id=? AND user_id=?";
-        System.out.println("DEBUG: Tentando excluir Anotação ID: " + id + ", UserID: " + userId);
+    public void excluir(int id, int listId) {
+        String sql = "DELETE FROM anotacoes WHERE id=? AND list_id=?";
+        System.out.println("DEBUG: Tentando excluir Anotação ID: " + id + ", ListID: " + listId);
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
-            stmt.setInt(2, userId);
+            stmt.setInt(2, listId);
             int rowsAffected = stmt.executeUpdate();
             System.out.println("DEBUG: Linhas afetadas pela exclusão: " + rowsAffected);
         } catch (SQLException e) {
@@ -111,4 +140,4 @@ public class AnotacaoDAO {
             e.printStackTrace();
         }
     }
-} // Esta é a ÚNICA chave que fecha a classe AnotacaoDAO
+}

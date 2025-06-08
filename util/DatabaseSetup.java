@@ -5,8 +5,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class DatabaseSetup { // <-- Início da classe DatabaseSetup
-    private static final String URL_SEM_BANCO = "jdbc:mysql://localhost:3306/?allowPublicKeyRetrieval=true&useSSL=false";
+public class DatabaseSetup {
+    private static final String URL_SEM_BANCO = "jdbc:mysql://localhost:3306/";
     private static final String USER = "root";
     private static final String PASSWORD = "admin"; // ALtere para a senha REAL do seu MySQL! (Ex: "1234567890")
 
@@ -15,31 +15,50 @@ public class DatabaseSetup { // <-- Início da classe DatabaseSetup
         try (Connection conn = DriverManager.getConnection(URL_SEM_BANCO, USER, PASSWORD);
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
-            System.out.println("Banco criado ou já existia.");
+            System.out.println("Banco 'listaflex' criado ou já existia.");
         } catch (SQLException e) {
             System.err.println("Erro ao criar banco: " + e.getMessage());
         }
     }
 
-    // Este método criarTabela() deve estar AQUI DENTRO da classe DatabaseSetup
-    public static void criarTabela() {
-        String sql = "CREATE TABLE IF NOT EXISTS anotacoes (" +
+    // NOVO MÉTODO: Cria a tabela user_lists
+    public static void criarTabelaUserLists() {
+        String sql = "CREATE TABLE IF NOT EXISTS user_lists (" +
                      "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                     "titulo VARCHAR(100), " +
-                     "descricao TEXT, " +
-                     "status VARCHAR(20), " +
-                     "user_id INT, " +
-                     "tipo_lista VARCHAR(20), " + // <-- NOVA COLUNA
+                     "user_id INT NOT NULL, " +
+                     "list_name VARCHAR(100) NOT NULL, " +
+                     "list_type VARCHAR(20) NOT NULL, " + // 'KANBAN' ou 'COMUM'
                      "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE" +
                      ")";
         try (Connection conn = DatabaseConnection.connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
-            System.out.println("Tabela 'anotacoes' criada ou já existe.");
+            System.out.println("Tabela 'user_lists' criada ou já existe.");
         } catch (SQLException e) {
-            System.err.println("Erro ao criar tabela 'anotacoes': " + e.getMessage());
+            System.err.println("Erro ao criar tabela 'user_lists': " + e.getMessage());
         }
     }
+
+    // MÉTODO MODIFICADO: Cria a tabela anotacoes para referenciar user_lists
+    // Em util/DatabaseSetup.java
+public static void criarTabela() {
+    String sql = "CREATE TABLE IF NOT EXISTS anotacoes (" +
+                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                 "titulo VARCHAR(100), " +
+                 "descricao TEXT, " +
+                 "status VARCHAR(20), " +
+                 "list_id INT NOT NULL, " +
+                 "prioridade VARCHAR(20) DEFAULT 'POUCO_IMPORTANTE', " + // <-- NOVA COLUNA para prioridade
+                 "FOREIGN KEY (list_id) REFERENCES user_lists(id) ON DELETE CASCADE" +
+                 ")";
+    try (Connection conn = DatabaseConnection.connect();
+         Statement stmt = conn.createStatement()) {
+        stmt.execute(sql);
+        System.out.println("Tabela 'anotacoes' criada ou já existe.");
+    } catch (SQLException e) {
+        System.err.println("Erro ao criar tabela 'anotacoes': " + e.getMessage());
+    }
+}
 
     public static void criarTabelaUsuarios() {
         String sql = "CREATE TABLE IF NOT EXISTS users (" +
@@ -55,4 +74,4 @@ public class DatabaseSetup { // <-- Início da classe DatabaseSetup
             System.err.println("Erro ao criar tabela de usuários: " + e.getMessage());
         }
     }
-} // <-- Fim da classe DatabaseSetup
+}

@@ -2,6 +2,7 @@ package view;
 
 import dao.UserDAO;
 import model.User;
+import view.TelaEscolhaLista; // Adicionar esta linha
 
 import javax.swing.*;
 import java.awt.*;
@@ -71,7 +72,7 @@ public class TelaLogin extends JFrame {
         if (user != null) {
             JOptionPane.showMessageDialog(this, "Login bem-sucedido!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             dispose(); // Close login window
-            new TelaKanban(user.getId()); // Passa o ID do usuário logado
+            new TelaEscolhaLista(user.getId()); // Chama TelaEscolhaLista
         } else {
             JOptionPane.showMessageDialog(this, "Usuário ou senha incorretos.", "Erro de Login", JOptionPane.ERROR_MESSAGE);
         }
