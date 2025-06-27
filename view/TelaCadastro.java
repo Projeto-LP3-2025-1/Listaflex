@@ -1,3 +1,4 @@
+// START OF FILE: TelaCadastro.java
 package view;
 
 import dao.UserDAO;
@@ -88,7 +89,7 @@ public class TelaCadastro extends JFrame {
         }
 
         User newUser = new User(username, password);
-        if (new UserDAO().registerUser(newUser)) {
+        if (userDAO.registerUser(newUser)) {
             JOptionPane.showMessageDialog(this, "Cadastro realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             dispose();
             new TelaLogin(); // Go back to login after successful registration
@@ -102,3 +103,4 @@ public class TelaCadastro extends JFrame {
         new TelaLogin();
     }
 }
+// END OF FILE: TelaCadastro.java

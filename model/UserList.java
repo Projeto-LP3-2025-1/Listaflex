@@ -1,8 +1,9 @@
+// START OF FILE: UserList.java
 package model;
 
 public class UserList {
     private int id;
-    private int userId;
+    private int userId; // ID do usuário proprietário da lista
     private String listName;
     private String listType; // "KANBAN" ou "COMUM"
 
@@ -30,7 +31,8 @@ public class UserList {
     public void setListType(String listType) { this.listType = listType; }
 
     @Override
-    public String toString() { // Útil para JList ou debugging
+    public String toString() {
         return listName + " (" + listType + ")";
     }
 }
+// END OF FILE: UserList.java

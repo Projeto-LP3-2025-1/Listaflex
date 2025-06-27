@@ -1,3 +1,4 @@
+// START OF FILE: TelaListaComum.java
 package view;
 
 import dao.AnotacaoDAO;
@@ -7,7 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
+import java.util.ArrayList; // ArrayList ainda é usado aqui internamente para List
 import java.util.List;
 
 public class TelaListaComum extends JPanel {
@@ -19,7 +20,13 @@ public class TelaListaComum extends JPanel {
     private String currentListName;
 
     private TelaKanban mainFrame;
-    private ArrayList<Boolean> concluidaStatusVisual; // Armazena o estado VISUAL de conclusão para cada Anotacao na lista
+    // Removida a ArrayList<Boolean> concluidaStatusVisual, pois o estado agora está no objeto Anotacao
+
+    // Botões como atributos de classe para poderem ser habilitados/desabilitados
+    private JButton btnNova;
+    private JButton btnEditar;
+    private JButton btnExcluir;
+    private JButton btnOrdenarPrioridade;
 
     // Construtor principal
     public TelaListaComum(int userId, int listId, String listName, TelaKanban mainFrame) {
@@ -36,25 +43,24 @@ public class TelaListaComum extends JPanel {
         listaAnotacoes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         listaAnotacoes.setFont(new Font("Arial", Font.PLAIN, 16));
 
-        // Define o CellRenderer personalizado
         listaAnotacoes.setCellRenderer(new CheckBoxListRenderer());
 
-        // Listener de clique para o checkbox visual e clique duplo para editar
         listaAnotacoes.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int index = listaAnotacoes.locationToIndex(e.getPoint());
                 if (index != -1) {
+                    Anotacao clickedAnotacao = listModel.getElementAt(index);
                     Rectangle bounds = listaAnotacoes.getCellBounds(index, index);
-                    // Supondo que o checkbox tem aproximadamente 20 pixels de largura à esquerda
                     if (e.getX() < bounds.x + 20) { // Clicou perto da área do checkbox
-                        // Inverte o estado visual (não no banco de dados)
-                        boolean currentState = concluidaStatusVisual.get(index);
-                        concluidaStatusVisual.set(index, !currentState);
+                        // Inverte o estado e ATUALIZA NO BANCO DE DADOS
+                        boolean newState = !clickedAnotacao.isConcluidaVisual();
+                        clickedAnotacao.setConcluidaVisual(newState);
+                        anotacaoDAO.atualizar(clickedAnotacao); // Salva a mudança no BD
                         listaAnotacoes.repaint(bounds); // Repinta apenas a célula afetada
-                        System.out.println("DEBUG: Anotação " + listModel.getElementAt(index).getTitulo() + " marcada VISUALMENTE como " + (!currentState ? "CONCLUÍDA" : "PENDENTE"));
+                        System.out.println("DEBUG: Anotação " + clickedAnotacao.getTitulo() + " marcada no BD como " + (newState ? "CONCLUÍDA" : "PENDENTE"));
                     } else if (e.getClickCount() == 2) { // Clique duplo para abrir edição
-                        editarAnotacaoListaComum(listModel.getElementAt(index));
+                        editarAnotacaoListaComum(clickedAnotacao);
                     }
                 }
             }
@@ -64,11 +70,12 @@ public class TelaListaComum extends JPanel {
 
         // Botões de ação para a lista comum
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton btnNova = new JButton("Nova Anotação");
+        
+        btnNova = new JButton("Nova Anotação"); // Inicializa como atributo
         btnNova.addActionListener(e -> abrirCadastroListaComum());
         buttonPanel.add(btnNova);
 
-        JButton btnEditar = new JButton("Editar Selecionada");
+        btnEditar = new JButton("Editar Selecionada"); // Inicializa como atributo
         btnEditar.addActionListener(e -> {
             Anotacao selectedAnotacao = listaAnotacoes.getSelectedValue();
             if (selectedAnotacao != null) {
@@ -79,11 +86,11 @@ public class TelaListaComum extends JPanel {
         });
         buttonPanel.add(btnEditar);
 
-        JButton btnExcluir = new JButton("Excluir Selecionada");
+        btnExcluir = new JButton("Excluir Selecionada"); // Inicializa como atributo
         btnExcluir.addActionListener(e -> excluirAnotacaoListaComum());
         buttonPanel.add(btnExcluir);
 
-        JButton btnOrdenarPrioridade = new JButton("Ordenar por Prioridade");
+        btnOrdenarPrioridade = new JButton("Ordenar por Prioridade"); // Inicializa como atributo
         btnOrdenarPrioridade.addActionListener(e -> ordenarPorPrioridade());
         buttonPanel.add(btnOrdenarPrioridade);
 
@@ -103,9 +110,32 @@ public class TelaListaComum extends JPanel {
         carregarAnotacoes(); // Carrega após o contexto ser definido
     }
 
+    // NOVO MÉTODO: Para habilitar/desabilitar botões com base no papel do usuário
+    public void updatePermissions(String userRole) {
+        boolean canWrite = "OWNER".equals(userRole) || "ADMIN".equals(userRole) || "EDITOR".equals(userRole);
+        
+        if (btnNova != null) btnNova.setEnabled(canWrite);
+        if (btnEditar != null) btnEditar.setEnabled(canWrite);
+        if (btnExcluir != null) btnExcluir.setEnabled(canWrite);
+        // A ordenação geralmente pode ser feita por qualquer um, mas se quiser restringir:
+        // if (btnOrdenarPrioridade != null) btnOrdenarPrioridade.setEnabled(canWrite);
+
+        if (!canWrite) {
+            if (btnNova != null) btnNova.setToolTipText("Você não tem permissão para adicionar anotações.");
+            if (btnEditar != null) btnEditar.setToolTipText("Você não tem permissão para editar anotações.");
+            if (btnExcluir != null) btnExcluir.setToolTipText("Você não tem permissão para excluir anotações.");
+            // if (btnOrdenarPrioridade != null) btnOrdenarPrioridade.setToolTipText("Você não tem permissão para ordenar.");
+        } else {
+             if (btnNova != null) btnNova.setToolTipText(null);
+             if (btnEditar != null) btnEditar.setToolTipText(null);
+             if (btnExcluir != null) btnExcluir.setToolTipText(null);
+             // if (btnOrdenarPrioridade != null) btnOrdenarPrioridade.setToolTipText(null);
+        }
+    }
+
     public void carregarAnotacoes() {
         listModel.clear();
-        concluidaStatusVisual = new ArrayList<>(); // Sempre reinicializa a lista de status visuais
+        // Não precisamos mais de concluidaStatusVisual, o estado está na Anotacao
 
         if (currentListId == -1) {
             System.out.println("DEBUG: Contexto da lista comum não definido para carregar anotações.");
@@ -115,16 +145,13 @@ public class TelaListaComum extends JPanel {
         List<Anotacao> lista = anotacaoDAO.listar(this.currentListId);
         System.out.println("DEBUG: Anotações da Lista Comum encontradas: " + lista.size());
         for (Anotacao a : lista) {
-            // AQUI É A CORREÇÃO: Removendo o filtro de status, para garantir que todas as anotações da lista comum sejam adicionadas.
-            // O status que você estava usando ("Pendente", "Concluído") não existe mais para anotações comuns no BD.
             listModel.addElement(a);
-            concluidaStatusVisual.add(false); // Adiciona o status visual para CADA item adicionado
         }
     }
 
     private void ordenarPorPrioridade() {
         listModel.clear();
-        concluidaStatusVisual = new ArrayList<>(); // Limpa e reinicializa
+        // Não precisamos mais de concluidaStatusVisual
 
         if (currentListId == -1) {
             System.out.println("DEBUG: Contexto da lista comum não definido para ordenar.");
@@ -134,67 +161,77 @@ public class TelaListaComum extends JPanel {
         List<Anotacao> lista = anotacaoDAO.listarEOrdenarPorPrioridade(this.currentListId);
         System.out.println("DEBUG: Anotações da Lista Comum ordenadas: " + lista.size());
         for (Anotacao a : lista) {
-            // AQUI É A CORREÇÃO: Removendo o filtro de status
             listModel.addElement(a);
-            concluidaStatusVisual.add(false); // Adiciona o status visual para CADA item adicionado
         }
     }
 
     private void abrirCadastroListaComum() {
-        JTextField titulo = new JTextField();
-        JTextArea descricao = new JTextArea(5, 20);
-        // Removido o statusBox, pois não será mais "Pendente" / "Concluído"
-        // String[] statusOptions = {"Pendente", "Concluído"};
-        // JComboBox<String> statusBox = new JComboBox<>(statusOptions);
-
-        String[] prioridadeOptions = {"POUCO_IMPORTANTE", "IMPORTANTE", "MUITO_IMPORTANTE"};
-        JComboBox<String> prioridadeBox = new JComboBox<>(prioridadeOptions);
-        prioridadeBox.setSelectedItem("POUCO_IMPORTANTE");
-
-        JPanel panel = new JPanel(new GridLayout(0, 1));
-        panel.add(new JLabel("Título:"));
-        panel.add(titulo);
-        panel.add(new JLabel("Descrição:"));
-        panel.add(new JScrollPane(descricao));
-        // Removido o statusBox do painel
-        // panel.add(new JLabel("Status:"));
-        // panel.add(statusBox);
-        panel.add(new JLabel("Prioridade:"));
-        panel.add(prioridadeBox);
-
-        int result = JOptionPane.showConfirmDialog(this, panel, "Nova Anotação (Lista Comum)",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-        if (result == JOptionPane.OK_OPTION) {
-            // Passa um status vazio ou genérico para a anotação comum, já que o checkbox lida com a conclusão
-            Anotacao a = new Anotacao(titulo.getText(), descricao.getText(), "", this.currentListId, (String) prioridadeBox.getSelectedItem());
-            anotacaoDAO.inserir(a);
-            carregarAnotacoes();
-        }
+    // DEBUG: Verificando papel antes de adicionar
+    String currentUserRoleFromMainFrame = mainFrame.getCurrentUserRole();
+    System.out.println("DEBUG: Tentando abrir cadastro Lista Comum. Papel atual: " + currentUserRoleFromMainFrame); // Adicionar esta linha
+    if (!("OWNER".equals(currentUserRoleFromMainFrame) || "ADMIN".equals(currentUserRoleFromMainFrame) || "EDITOR".equals(currentUserRoleFromMainFrame))) {
+        JOptionPane.showMessageDialog(this, "Você não tem permissão para adicionar anotações nesta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+        System.out.println("DEBUG: Permissão NEGADA para adicionar anotação Lista Comum."); // Adicionar esta linha
+        return;
     }
+    System.out.println("DEBUG: Permissão CONCEDIDA para adicionar anotação Lista Comum."); // Adicionar esta linha
+
+    JTextField titulo = new JTextField();
+    JTextArea descricao = new JTextArea(5, 20);
+
+    String[] prioridadeOptions = {"POUCO_IMPORTANTE", "IMPORTANTE", "MUITO_IMPORTANTE"};
+    JComboBox<String> prioridadeBox = new JComboBox<>(prioridadeOptions);
+    prioridadeBox.setSelectedItem("POUCO_IMPORTANTE");
+
+    JPanel panel = new JPanel(new GridLayout(0, 1));
+    panel.add(new JLabel("Título:"));
+    panel.add(titulo);
+    panel.add(new JLabel("Descrição:"));
+    panel.add(new JScrollPane(descricao));
+    panel.add(new JLabel("Prioridade:"));
+    panel.add(prioridadeBox);
+
+    int result = JOptionPane.showConfirmDialog(this, panel, "Nova Anotação (Lista Comum)",
+            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    System.out.println("DEBUG: Resultado do JOptionPane (Lista Comum): " + result); // Adicionar esta linha
+
+    if (result == JOptionPane.OK_OPTION) {
+        Anotacao a = new Anotacao(titulo.getText(), descricao.getText(), "", this.currentListId, (String) prioridadeBox.getSelectedItem(), false);
+        System.out.println("DEBUG: Preparando para inserir Anotação Lista Comum no BD. Anotação: " + a.getTitulo() + ", ListID: " + a.getListId()); // Adicionar esta linha
+        anotacaoDAO.inserir(a);
+        System.out.println("DEBUG: Chamando carregarAnotacoes() após tentativa de inserção."); // Adicionar esta linha
+        carregarAnotacoes();
+    } else {
+        System.out.println("DEBUG: Operação de Nova Anotação (Lista Comum) CANCELADA ou janela FECHADA."); // Adicionar esta linha
+    }
+}
 
     private void editarAnotacaoListaComum(Anotacao anotacaoParaEditar) {
+        // CORREÇÃO: Renomear userRole para evitar conflito
+        String currentUserRoleFromMainFrame = mainFrame.getCurrentUserRole();
+        if (!("OWNER".equals(currentUserRoleFromMainFrame) || "ADMIN".equals(currentUserRoleFromMainFrame) || "EDITOR".equals(currentUserRoleFromMainFrame))) {
+            JOptionPane.showMessageDialog(this, "Você não tem permissão para editar anotações nesta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         JTextField titulo = new JTextField(anotacaoParaEditar.getTitulo());
         JTextArea descricao = new JTextArea(anotacaoParaEditar.getDescricao());
-        // Removido o statusBox
-        // String[] statusOptions = {"Pendente", "Concluído"};
-        // JComboBox<String> statusBox = new JComboBox<>(statusOptions);
-        // statusBox.setSelectedItem(anotacaoParaEditar.getStatus());
 
         String[] prioridadeOptions = {"POUCO_IMPORTANTE", "IMPORTANTE", "MUITO_IMPORTANTE"};
         JComboBox<String> prioridadeBox = new JComboBox<>(prioridadeOptions);
         prioridadeBox.setSelectedItem(anotacaoParaEditar.getPrioridade());
 
+        JCheckBox concluidaCheckbox = new JCheckBox("Concluída", anotacaoParaEditar.isConcluidaVisual()); // Usa o estado persistido
+
+
         JPanel panel = new JPanel(new GridLayout(0, 1));
         panel.add(new JLabel("Título:"));
         panel.add(titulo);
         panel.add(new JLabel("Descrição:"));
         panel.add(new JScrollPane(descricao));
-        // Removido o statusBox do painel
-        // panel.add(new JLabel("Status:"));
-        // panel.add(statusBox);
         panel.add(new JLabel("Prioridade:"));
         panel.add(prioridadeBox);
+        panel.add(concluidaCheckbox);
 
         String[] options = {"Salvar", "Excluir Anotação", "Cancelar"};
         int result = JOptionPane.showOptionDialog(this, panel, "Editar Anotação (Lista Comum)",
@@ -203,13 +240,19 @@ public class TelaListaComum extends JPanel {
         if (result == 0) { // Clicou em "Salvar"
             anotacaoParaEditar.setTitulo(titulo.getText());
             anotacaoParaEditar.setDescricao(descricao.getText());
-            // Não atualiza mais o status
-            // anotacaoParaEditar.setStatus((String) statusBox.getSelectedItem());
             anotacaoParaEditar.setPrioridade((String) prioridadeBox.getSelectedItem());
+            anotacaoParaEditar.setConcluidaVisual(concluidaCheckbox.isSelected());
             anotacaoDAO.atualizar(anotacaoParaEditar);
             carregarAnotacoes();
         } else if (result == 1) { // Clicou em "Excluir Anotação"
-             int confirmExcluir = JOptionPane.showConfirmDialog(this,
+            // CORREÇÃO: Renomear userRole para evitar conflito
+            String userRoleFromMainFrameForDelete = mainFrame.getCurrentUserRole();
+            if (!"OWNER".equals(userRoleFromMainFrameForDelete) && !"ADMIN".equals(userRoleFromMainFrameForDelete)) {
+                JOptionPane.showMessageDialog(this, "Você não tem permissão para excluir anotações nesta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            int confirmExcluir = JOptionPane.showConfirmDialog(this,
                     "Tem certeza que deseja EXCLUIR esta anotação?", "Confirmar Exclusão",
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (confirmExcluir == JOptionPane.YES_OPTION) {
@@ -220,6 +263,13 @@ public class TelaListaComum extends JPanel {
     }
 
     private void excluirAnotacaoListaComum() {
+        // CORREÇÃO: Renomear userRole para evitar conflito
+        String currentUserRoleFromMainFrame = mainFrame.getCurrentUserRole();
+        if (!("OWNER".equals(currentUserRoleFromMainFrame) || "ADMIN".equals(currentUserRoleFromMainFrame))) {
+            JOptionPane.showMessageDialog(this, "Você não tem permissão para excluir anotações nesta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         Anotacao selectedAnotacao = listaAnotacoes.getSelectedValue();
         if (selectedAnotacao == null) {
             JOptionPane.showMessageDialog(this, "Selecione uma anotação para excluir.", "Aviso", JOptionPane.WARNING_MESSAGE);
@@ -243,33 +293,14 @@ public class TelaListaComum extends JPanel {
 
         @Override
         public Component getListCellRendererComponent(JList<? extends Anotacao> list, Anotacao value, int index, boolean isSelected, boolean cellHasFocus) {
-            // A correção principal já está aqui para garantir que 'concluidaStatusVisual' está sincronizado.
-            // A verificação de segurança adicionada previne crashes, mas a causa raiz é a sincronização.
-            boolean isConcluidaVisual = false;
-            if (index >= 0 && index < concluidaStatusVisual.size()) {
-                 isConcluidaVisual = concluidaStatusVisual.get(index);
-            } else {
-                 // Isso indica um problema de sincronização de dados que a correção do loop deveria resolver.
-                 // Apenas para evitar crash, mas investigue por que isso acontece se você vir este erro no console.
-                 System.err.println("ERRO INTERNO: Index " + index + " fora dos limites para concluidaStatusVisual (tamanho: " + concluidaStatusVisual.size() + ") ao renderizar. Recarregando lista...");
-                 // Uma tentativa de recuperação, embora a causa raiz deva ser evitada pela sincronização.
-                 SwingUtilities.invokeLater(() -> carregarAnotacoes()); // Tentar recarregar em outro thread da EDT
-                 setText("<html>Erro de Renderização (Recarregando...)</html>");
-                 setSelected(false);
-                 setBackground(list.getBackground());
-                 setForeground(list.getForeground());
-                 return this;
-            }
+            setSelected(value.isConcluidaVisual()); // Lê o estado persistido do objeto Anotacao
 
             String baseText = "<b>" + value.getTitulo() + "</b> - " + value.getDescricao();
             baseText += "<br>Prioridade: " + value.getPrioridade();
-            // A linha abaixo foi ajustada para só mostrar o Status se ele não for vazio.
-            if (value.getStatus() != null && !value.getStatus().isEmpty()) {
+            if (value.getStatus() != null && !value.getStatus().isEmpty()) { // Status de Kanban
                 baseText += " - Status: " + value.getStatus();
             }
-
-            setSelected(isConcluidaVisual);
-
+            
             if (isSelected) {
                 setBackground(list.getSelectionBackground());
                 setForeground(list.getSelectionForeground());
@@ -278,7 +309,7 @@ public class TelaListaComum extends JPanel {
                 setForeground(list.getForeground());
             }
 
-            if (isConcluidaVisual) {
+            if (value.isConcluidaVisual()) { // Aplica o risco e estilo se a anotação estiver concluída
                 setFont(list.getFont().deriveFont(Font.ITALIC | Font.BOLD));
                 setText("<html><strike>" + baseText + "</strike></html>");
             } else {
@@ -289,3 +320,4 @@ public class TelaListaComum extends JPanel {
         }
     }
 }
+// END OF FILE: TelaListaComum.java

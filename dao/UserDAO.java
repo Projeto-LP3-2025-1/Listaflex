@@ -1,3 +1,4 @@
+// START OF FILE: UserDAO.java
 package dao;
 
 import model.User;
@@ -8,7 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class UserDAO {
+public class UserDAO { // INÍCIO DA CLASSE USERDAO
 
     public boolean registerUser(User user) {
         String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
@@ -17,11 +18,14 @@ public class UserDAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getPassword());
-            stmt.executeUpdate();
-            System.out.println("DEBUG: Usuário " + user.getUsername() + " registrado com sucesso.");
-            return true;
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("DEBUG: Usuário " + user.getUsername() + " registrado com sucesso.");
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
-            if (e.getErrorCode() == 1062) {
+            if (e.getErrorCode() == 1062) { // MySQL error code for duplicate entry (username)
                 System.err.println("ERRO: Usuário '" + user.getUsername() + "' já existe.");
                 return false;
             }
@@ -59,4 +63,39 @@ public class UserDAO {
         System.out.println("DEBUG: Login falhou para usuário: " + username);
         return null;
     }
-}
+
+    public User getUserById(int id) { // Método para buscar usuário por ID
+        String sql = "SELECT id, username, password FROM users WHERE id = ?";
+        try (Connection conn = util.DatabaseConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao buscar usuário por ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public User getUserByUsername(String username) { // Método para buscar usuário por username
+        String sql = "SELECT id, username, password FROM users WHERE username = ?";
+        try (Connection conn = util.DatabaseConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao buscar usuário por username: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+} // FIM DA CLASSE USERDAO
+// END OF FILE: UserDAO.java

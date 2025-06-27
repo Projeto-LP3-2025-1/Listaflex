@@ -1,8 +1,9 @@
+// START OF FILE: TelaLogin.java
 package view;
 
 import dao.UserDAO;
 import model.User;
-import view.TelaEscolhaLista; // Adicionar esta linha
+import view.TelaEscolhaLista;
 
 import javax.swing.*;
 import java.awt.*;
@@ -83,3 +84,4 @@ public class TelaLogin extends JFrame {
         new TelaCadastro();
     }
 }
+// END OF FILE: TelaLogin.java

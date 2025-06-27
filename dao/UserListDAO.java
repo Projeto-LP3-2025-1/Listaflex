@@ -1,6 +1,8 @@
+// START OF FILE: UserListDAO.java
 package dao;
 
 import model.UserList;
+import model.ListCollaborator; // Adicionado import para ListCollaborator
 import util.DatabaseConnection;
 
 import java.sql.Connection;
@@ -12,9 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserListDAO {
+    private ListCollaboratorDAO collaboratorDAO = new ListCollaboratorDAO();
 
     public int inserir(UserList userList) {
         String sql = "INSERT INTO user_lists (user_id, list_name, list_type) VALUES (?, ?, ?)";
+        int generatedId = -1;
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, userList.getUserId());
@@ -23,41 +27,25 @@ public class UserListDAO {
             int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected > 0) {
-                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        userList.setId(generatedKeys.getInt(1));
-                        return userList.getId();
+                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        generatedId = rs.getInt(1);
+                        userList.setId(generatedId);
+                        // CORREÇÃO: Chamar addCollaborator para definir o criador como OWNER
+                        collaboratorDAO.addCollaborator(new ListCollaborator(generatedId, userList.getUserId(), "OWNER"));
                     }
                 }
             }
         } catch (SQLException e) {
-            System.err.println("ERRO SQL ao inserir UserList:");
+            System.err.println("ERRO SQL ao inserir UserList: " + e.getMessage());
             e.printStackTrace();
         }
-        return -1; // Retorna -1 se a inserção falhar
+        return generatedId;
     }
 
+    // Listar listas que um usuário está associado (como owner ou colaborador)
     public List<UserList> listarPorUsuario(int userId) {
-        List<UserList> userLists = new ArrayList<>();
-        String sql = "SELECT * FROM user_lists WHERE user_id = ?";
-        try (Connection conn = DatabaseConnection.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    userLists.add(new UserList(
-                        rs.getInt("id"),
-                        rs.getInt("user_id"),
-                        rs.getString("list_name"),
-                        rs.getString("list_type")
-                    ));
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("ERRO SQL ao listar UserLists:");
-            e.printStackTrace();
-        }
-        return userLists;
+        return collaboratorDAO.getListsForUser(userId);
     }
 
     public boolean atualizar(UserList userList) {
@@ -67,18 +55,18 @@ public class UserListDAO {
             stmt.setString(1, userList.getListName());
             stmt.setString(2, userList.getListType());
             stmt.setInt(3, userList.getId());
-            stmt.setInt(4, userList.getUserId());
+            stmt.setInt(4, userList.getUserId()); // O owner da lista não muda
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
-            System.err.println("ERRO SQL ao atualizar UserList:");
+            System.err.println("ERRO SQL ao atualizar UserList: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
     }
 
     public boolean excluir(int listId, int userId) {
-        String sql = "DELETE FROM user_lists WHERE id=? AND user_id=?";
+        String sql = "DELETE FROM user_lists WHERE id=? AND user_id=?"; // Garante que apenas o dono pode excluir
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, listId);
@@ -86,9 +74,32 @@ public class UserListDAO {
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
-            System.err.println("ERRO SQL ao excluir UserList:");
+            System.err.println("ERRO SQL ao excluir UserList: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
     }
+
+    public UserList getById(int listId) {
+        String sql = "SELECT id, user_id, list_name, list_type FROM user_lists WHERE id = ?";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, listId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new UserList(
+                        rs.getInt("id"),
+                        rs.getInt("user_id"),
+                        rs.getString("list_name"),
+                        rs.getString("list_type")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao obter UserList por ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
+// END OF FILE: UserListDAO.java

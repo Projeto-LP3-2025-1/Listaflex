@@ -1,3 +1,4 @@
+// START OF FILE: DatabaseConnection.java
 package util;
 
 import java.sql.Connection;
@@ -5,9 +6,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConnection {
-    private static final String URL = "jdbc:mysql://localhost:3306/listaflex";
+    private static final String URL = "jdbc:mysql://localhost:3306/listaflex?allowPublicKeyRetrieval=true&useSSL=false";
     private static final String USER = "root";
-    private static final String PASSWORD = "admin"; // ALtere para a senha REAL do seu MySQL! (Ex: "1234567890")
+    private static final String PASSWORD = "admin"; // ALTERAR AQUI SE A SENHA FOR DIFERENTE
 
     public static Connection connect() {
         try {
@@ -18,3 +19,4 @@ public class DatabaseConnection {
         }
     }
 }
+// END OF FILE: DatabaseConnection.java

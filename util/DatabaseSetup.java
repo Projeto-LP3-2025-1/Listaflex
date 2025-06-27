@@ -38,7 +38,24 @@ public class DatabaseSetup {
             System.err.println("Erro ao criar tabela 'user_lists': " + e.getMessage());
         }
     }
-
+    // NOVO MÉTODO: Cria a tabela list_collaborators para compartilhamento
+public static void criarTabelaListCollaborators() {
+    String sql = "CREATE TABLE IF NOT EXISTS list_collaborators (" +
+                 "list_id INT NOT NULL, " +
+                 "user_id INT NOT NULL, " +
+                 "role VARCHAR(20) NOT NULL, " + // Ex: 'OWNER', 'ADMIN', 'EDITOR', 'VIEWER'
+                 "PRIMARY KEY (list_id, user_id), " + // Chave primária composta
+                 "FOREIGN KEY (list_id) REFERENCES user_lists(id) ON DELETE CASCADE, " + // Refere a lista
+                 "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE" + // Refere o usuário
+                 ")";
+    try (Connection conn = DatabaseConnection.connect();
+         Statement stmt = conn.createStatement()) {
+        stmt.execute(sql);
+        System.out.println("Tabela 'list_collaborators' criada ou já existe.");
+    } catch (SQLException e) {
+        System.err.println("Erro ao criar tabela 'list_collaborators': " + e.getMessage());
+    }
+}
     // MÉTODO MODIFICADO: Cria a tabela anotacoes para referenciar user_lists
     // Em util/DatabaseSetup.java
 public static void criarTabela() {
@@ -46,6 +63,7 @@ public static void criarTabela() {
                  "id INT AUTO_INCREMENT PRIMARY KEY, " +
                  "titulo VARCHAR(100), " +
                  "descricao TEXT, " +
+                 "is_concluida_visual BOOLEAN, " +
                  "status VARCHAR(20), " +
                  "list_id INT NOT NULL, " +
                  "prioridade VARCHAR(20) DEFAULT 'POUCO_IMPORTANTE', " + // <-- NOVA COLUNA para prioridade
