@@ -14,13 +14,27 @@ import java.awt.*;
 import java.util.List;
 
 public class TelaKanban extends JFrame {
+    // --- CONSTANTES DE CORES DA PALETA PROFISSIONAL ---
+    private static final Color PRIMARY_COLOR = Color.decode("#2C3E50"); // Azul Marinho Escuro
+    private static final Color ACCENT_COLOR = Color.decode("#3498DB"); // Azul Céu
+    private static final Color BACKGROUND_COLOR_LIGHT = Color.decode("#ECF0F1"); // Fundo claro
+    private static final Color TEXT_COLOR_DARK = Color.decode("#34495E"); // Texto principal
+    private static final Color BORDER_COLOR_NEUTRAL = Color.decode("#BDC3C7"); // Bordas
+
+    // Cores de Status Kanban
+    private static final Color STATUS_TODO_COLOR = Color.decode("#E74C3C"); // Vermelho escuro (A Fazer)
+    private static final Color STATUS_DOING_COLOR = Color.decode("#F1C40F"); // Amarelo mostarda (Fazendo)
+    private static final Color STATUS_DONE_COLOR = Color.decode("#27AE60"); // Verde escuro (Feito)
+    // --- FIM CONSTANTES DE CORES ---
+
+
     private JPanel mainPanel;
     private JPanel kanbanPanel;
     private TelaListaComum listaComumPanel;
 
-    private JPanel panelAFazer = new JPanel(new GridLayout(0, 1));
-    private JPanel panelFazendo = new JPanel(new GridLayout(0, 1));
-    private JPanel panelFeito = new JPanel(new GridLayout(0, 1));
+    private JPanel panelAFazer = new JPanel(new GridLayout(0, 1, 10, 10)); // Espaçamento entre anotações
+    private JPanel panelFazendo = new JPanel(new GridLayout(0, 1, 10, 10));
+    private JPanel panelFeito = new JPanel(new GridLayout(0, 1, 10, 10));
 
     private AnotacaoDAO anotacaoDAO = new AnotacaoDAO();
     private UserListDAO userListDAO = new UserListDAO();
@@ -37,17 +51,25 @@ public class TelaKanban extends JFrame {
         this.currentListId = listId;
         this.currentListName = listName;
         this.currentListType = tipoListaInicial;
-        this.currentUserRole = collaboratorDAO.getUserRoleInList(this.currentListId, this.loggedInUserId); // Carrega o papel do usuário logado
+        
+        this.currentUserRole = collaboratorDAO.getUserRoleInList(this.currentListId, this.loggedInUserId);
+        System.out.println("DEBUG (TelaKanban Construtor): Usuário ID " + loggedInUserId + " na Lista '" + currentListName + "' (ID: " + currentListId + ") tem Papel: " + currentUserRole);
+
 
         setTitle("Listaflex - " + currentListName + " (" + currentListType + ") - Papel: " + currentUserRole);
         setSize(900, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+        getContentPane().setBackground(BACKGROUND_COLOR_LIGHT); // Fundo geral do frame
 
         JMenuBar menuBar = new JMenuBar();
+        menuBar.setBackground(PRIMARY_COLOR); // Cor da barra de menu
         JMenu menu = new JMenu("Opções");
+        menu.setForeground(Color.WHITE); // Texto do menu
 
         JMenuItem deslogar = new JMenuItem("Deslogar");
+        deslogar.setBackground(PRIMARY_COLOR); // Fundo do item de menu
+        deslogar.setForeground(Color.WHITE); // Texto do item de menu
         deslogar.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(this,
                     "Tem certeza que deseja deslogar?", "Deslogar",
@@ -60,6 +82,8 @@ public class TelaKanban extends JFrame {
         menu.add(deslogar);
 
         JMenuItem gerenciarListas = new JMenuItem("Gerenciar Listas");
+        gerenciarListas.setBackground(PRIMARY_COLOR);
+        gerenciarListas.setForeground(Color.WHITE);
         gerenciarListas.addActionListener(e -> {
             dispose();
             new TelaEscolhaLista(loggedInUserId);
@@ -70,8 +94,13 @@ public class TelaKanban extends JFrame {
         setJMenuBar(menuBar);
 
         mainPanel = new JPanel(new CardLayout());
+        mainPanel.setBackground(BACKGROUND_COLOR_LIGHT); // Fundo do painel principal
 
-        kanbanPanel = new JPanel(new GridLayout(1, 3));
+
+        kanbanPanel = new JPanel(new GridLayout(1, 3, 15, 0)); // Espaçamento entre colunas
+        kanbanPanel.setBackground(BACKGROUND_COLOR_LIGHT);
+        kanbanPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Margem interna
+        
         kanbanPanel.add(criarColuna(panelAFazer, "A Fazer"));
         kanbanPanel.add(criarColuna(panelFazendo, "Fazendo"));
         kanbanPanel.add(criarColuna(panelFeito, "Feito"));
@@ -98,16 +127,51 @@ public class TelaKanban extends JFrame {
 
     private JPanel criarColuna(JPanel panel, String titulo) {
         JPanel coluna = new JPanel(new BorderLayout());
-        coluna.add(new JLabel(titulo, SwingConstants.CENTER), BorderLayout.NORTH);
-        coluna.add(new JScrollPane(panel), BorderLayout.CENTER);
+        coluna.setBackground(Color.WHITE); // Fundo da coluna
+        coluna.setBorder(BorderFactory.createLineBorder(BORDER_COLOR_NEUTRAL, 1, true)); // Borda arredondada
+        coluna.setPreferredSize(new Dimension(280, 500)); // Tamanho preferencial da coluna
+
+        JLabel tituloLabel = new JLabel(titulo, SwingConstants.CENTER);
+        tituloLabel.setFont(new Font("Arial", Font.BOLD, 18)); // Fonte maior
+        tituloLabel.setForeground(TEXT_COLOR_DARK); // Cor do texto
+        tituloLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0)); // Margem interna
+        coluna.add(tituloLabel, BorderLayout.NORTH);
+
+        // Painel interno que contém as anotações
+        JPanel anotacoesPanel = new JPanel(); // Usará FlowLayout ou BoxLayout para empilhar
+        anotacoesPanel.setLayout(new BoxLayout(anotacoesPanel, BoxLayout.Y_AXIS)); // Empilha verticalmente
+        anotacoesPanel.setBackground(Color.WHITE); // Fundo branco
+        coluna.add(new JScrollPane(anotacoesPanel), BorderLayout.CENTER); // Adiciona ScrollPane
+
+        // Mapear o painel interno de anotações para a variável de classe correspondente
+        if (titulo.equals("A Fazer")) {
+            this.panelAFazer = anotacoesPanel;
+        } else if (titulo.equals("Fazendo")) {
+            this.panelFazendo = anotacoesPanel;
+        } else if (titulo.equals("Feito")) {
+            this.panelFeito = anotacoesPanel;
+        }
 
         JButton btnNovaAnotacaoColuna = new JButton("+ Nova Anotação");
-        // Habilita o botão apenas se tiver permissão de escrita
-        if ("OWNER".equals(currentUserRole) || "ADMIN".equals(currentUserRole) || "EDITOR".equals(currentUserRole)) {
+        btnNovaAnotacaoColuna.setBackground(ACCENT_COLOR); // Cor do botão
+        btnNovaAnotacaoColuna.setForeground(Color.WHITE); // Texto branco
+        btnNovaAnotacaoColuna.setFont(new Font("Arial", Font.BOLD, 14));
+        btnNovaAnotacaoColuna.setOpaque(true);
+        btnNovaAnotacaoColuna.setBorderPainted(false);
+        btnNovaAnotacaoColuna.setFocusPainted(false);
+        
+        boolean canAdd = "Criador(a)".equals(currentUserRole) || "ADMIN".equals(currentUserRole) || "EDITOR".equals(currentUserRole); // Voltou para Criador(a)/ADMIN/EDITOR
+        System.out.println("DEBUG (criarColuna): Botão 'Nova Anotação' para coluna '" + titulo + "'. Papel: " + currentUserRole + ", Pode Adicionar: " + canAdd);
+
+        if (canAdd) {
             btnNovaAnotacaoColuna.addActionListener(e -> abrirCadastroKanbanComStatus(titulo));
+            btnNovaAnotacaoColuna.setEnabled(true);
+            btnNovaAnotacaoColuna.setToolTipText(null);
+            System.out.println("DEBUG (criarColuna): Botão 'Nova Anotação' para '" + titulo + "' HABILITADO.");
         } else {
-            btnNovaAnotacaoColuna.setEnabled(false); // Desabilita o botão
+            btnNovaAnotacaoColuna.setEnabled(false);
             btnNovaAnotacaoColuna.setToolTipText("Você não tem permissão para adicionar anotações.");
+            System.out.println("DEBUG (criarColuna): Botão 'Nova Anotação' para '" + titulo + "' DESABILITADO.");
         }
         coluna.add(btnNovaAnotacaoColuna, BorderLayout.SOUTH);
 
@@ -124,8 +188,8 @@ public class TelaKanban extends JFrame {
     private void showListaComumView() {
         CardLayout cl = (CardLayout)(mainPanel.getLayout());
         cl.show(mainPanel, "LISTA_COMUM_VIEW");
-        listaComumPanel.setListContext(this.currentListId, this.currentListName); // Configura o contexto
-        listaComumPanel.updatePermissions(currentUserRole); // Atualiza permissões dos botões da lista comum
+        listaComumPanel.setListContext(this.currentListId, this.currentListName);
+        listaComumPanel.updatePermissions(currentUserRole);
         setTitle("Listaflex - " + currentListName + " (Lista Comum) - Papel: " + currentUserRole);
     }
 
@@ -142,51 +206,73 @@ public class TelaKanban extends JFrame {
         }
     }
 
-    // CORREÇÃO: Novo método getter para o papel do usuário logado na lista atual
     public String getCurrentUserRole() {
         return this.currentUserRole;
     }
 
-    // START OF SNIPPET: TelaKanban.java - abrirCadastroKanbanComStatus
     private void abrirCadastroKanbanComStatus(String statusInicial) {
-    // DEBUG: Verificando papel antes de adicionar
-    System.out.println("DEBUG: Tentando abrir cadastro Kanban. Papel atual: " + currentUserRole); // Adicionar esta linha
-    if (!("OWNER".equals(currentUserRole) || "ADMIN".equals(currentUserRole) || "EDITOR".equals(currentUserRole))) {
-        JOptionPane.showMessageDialog(this, "Você não tem permissão para adicionar anotações nesta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
-        System.out.println("DEBUG: Permissão NEGADA para adicionar anotação Kanban."); // Adicionar esta linha
-        return;
+        System.out.println("DEBUG (abrirCadastroKanban): Verificando permissão antes de abrir diálogo. Papel: " + currentUserRole);
+        if (!("Criador(a)".equals(currentUserRole) || "ADMIN".equals(currentUserRole) || "EDITOR".equals(currentUserRole))) { // Voltou para Criador(a)/ADMIN/EDITOR
+            JOptionPane.showMessageDialog(this, "Você não tem permissão para adicionar anotações nesta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+            System.out.println("DEBUG (abrirCadastroKanban): Permissão NEGADA para adicionar anotação Kanban.");
+            return;
+        }
+        System.out.println("DEBUG (abrirCadastroKanban): Permissão CONCEDIDA para adicionar anotação Kanban.");
+
+        JTextField titulo = new JTextField();
+        JTextArea descricao = new JTextArea(5, 20);
+        String[] statusOptions = {"AFazer", "Fazendo", "Feito"};
+        JComboBox<String> statusBox = new JComboBox<>(statusOptions);
+        statusBox.setSelectedItem(statusInicial.replace(" ", ""));
+
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+        panel.add(new JLabel("Título:"));
+        panel.add(titulo);
+        panel.add(new JLabel("Descrição:"));
+        panel.add(new JScrollPane(descricao));
+        panel.add(new JLabel("Status:"));
+        panel.add(statusBox);
+
+        // Cores para o diálogo de nova anotação Kanban
+        panel.setBackground(BACKGROUND_COLOR_LIGHT);
+        for (Component comp : panel.getComponents()) {
+            if (comp instanceof JLabel) {
+                ((JLabel)comp).setForeground(TEXT_COLOR_DARK);
+            }
+            if (comp instanceof JTextField || comp instanceof JTextArea || comp instanceof JComboBox) {
+                comp.setBackground(Color.WHITE);
+                comp.setForeground(TEXT_COLOR_DARK);
+            }
+        }
+        UIManager.put("OptionPane.background", BACKGROUND_COLOR_LIGHT);
+        UIManager.put("Panel.background", BACKGROUND_COLOR_LIGHT);
+        UIManager.put("Button.background", ACCENT_COLOR);
+        UIManager.put("Button.foreground", Color.WHITE);
+        UIManager.put("Button.font", new Font("Arial", Font.BOLD, 12));
+
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "Nova Anotação (Kanban)",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        System.out.println("DEBUG (abrirCadastroKanban): Resultado do JOptionPane: " + result);
+
+        // Resetar UIManager
+        UIManager.put("OptionPane.background", null);
+        UIManager.put("Panel.background", null);
+        UIManager.put("Button.background", null);
+        UIManager.put("Button.foreground", null);
+        UIManager.put("Button.font", null);
+
+
+        if (result == JOptionPane.OK_OPTION) {
+            Anotacao a = new Anotacao(titulo.getText(), descricao.getText(), (String) statusBox.getSelectedItem(), this.currentListId, "Pouco importante", false);
+            System.out.println("DEBUG (abrirCadastroKanban): Anotação preparada para inserção: " + a.getTitulo() + ", ListID: " + a.getListId());
+            anotacaoDAO.inserir(a);
+            System.out.println("DEBUG (abrirCadastroKanban): Chamando carregarAnotacoesKanban() após inserção.");
+            carregarAnotacoesKanban();
+        } else {
+            System.out.println("DEBUG (abrirCadastroKanban): Operação de criação cancelada/fechada.");
+        }
     }
-    System.out.println("DEBUG: Permissão CONCEDIDA para adicionar anotação Kanban."); // Adicionar esta linha
-
-    JTextField titulo = new JTextField();
-    JTextArea descricao = new JTextArea(5, 20);
-    String[] statusOptions = {"AFazer", "Fazendo", "Feito"};
-    JComboBox<String> statusBox = new JComboBox<>(statusOptions);
-    statusBox.setSelectedItem(statusInicial.replace(" ", ""));
-
-    JPanel panel = new JPanel(new GridLayout(0, 1));
-    panel.add(new JLabel("Título:"));
-    panel.add(titulo);
-    panel.add(new JLabel("Descrição:"));
-    panel.add(new JScrollPane(descricao));
-    panel.add(new JLabel("Status:"));
-    panel.add(statusBox);
-
-    int result = JOptionPane.showConfirmDialog(this, panel, "Nova Anotação (Kanban)",
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-    System.out.println("DEBUG: Resultado do JOptionPane (Kanban): " + result); // Adicionar esta linha
-
-    if (result == JOptionPane.OK_OPTION) {
-        Anotacao a = new Anotacao(titulo.getText(), descricao.getText(), (String) statusBox.getSelectedItem(), this.currentListId, "POUCO_IMPORTANTE", false);
-        System.out.println("DEBUG: Preparando para inserir Anotação Kanban no BD. Anotação: " + a.getTitulo() + ", ListID: " + a.getListId()); // Adicionar esta linha
-        anotacaoDAO.inserir(a);
-        System.out.println("DEBUG: Chamando carregarAnotacoesKanban() após tentativa de inserção."); // Adicionar esta linha
-        carregarAnotacoesKanban();
-    } else {
-        System.out.println("DEBUG: Operação de Nova Anotação (Kanban) CANCELADA ou janela FECHADA."); // Adicionar esta linha
-    }
-}
-// END OF SNIPPET: TelaKanban.java - abrirCadastroKanbanComStatus
 
     public void carregarAnotacoesKanban() {
         panelAFazer.removeAll();
@@ -198,14 +284,35 @@ public class TelaKanban extends JFrame {
         System.out.println("DEBUG: Anotações Kanban encontradas para ListID " + this.currentListId + ": " + lista.size());
         for (Anotacao a : lista) {
             if (a.getStatus().equals("AFazer") || a.getStatus().equals("Fazendo") || a.getStatus().equals("Feito")) {
-                System.out.println("DEBUG:   - Anotação Kanban carregada: ID=" + a.getId() + ", Título='" + a.getTitulo() + "', Status='" + a.getStatus() + "', ListID=" + a.getListId() + ", Prioridade=" + a.getPrioridade());
+                System.out.println("DEBUG:   - Anotação Kanban carregada: ID=" + a.getId() + ", Título='" + a.getTitulo() + "', Status='" + a.getStatus() + "', ListID=" + a.getListId() + ", Prioridade=" + a.getPrioridade() + ", ConcluidaVisual: " + a.isConcluidaVisual());
                 JButton botao = new JButton("<html><b>" + a.getTitulo() + "</b><br>" + a.getDescricao() + "</html>");
-                if ("OWNER".equals(currentUserRole) || "ADMIN".equals(currentUserRole) || "EDITOR".equals(currentUserRole)) {
+                boolean canEdit = "Criador(a)".equals(currentUserRole) || "ADMIN".equals(currentUserRole) || "EDITOR".equals(currentUserRole); // Voltou para Criador(a)/ADMIN/EDITOR
+                System.out.println("DEBUG (carregarAnotacoesKanban): Anotação '" + a.getTitulo() + "'. Papel: " + currentUserRole + ", Pode Editar: " + canEdit);
+                
+                if (canEdit) {
                     botao.addActionListener(e -> editarAnotacaoKanban(a));
+                    botao.setEnabled(true);
+                    botao.setToolTipText(null);
+                    System.out.println("DEBUG (carregarAnotacoesKanban): Botão de anotação HABILITADO.");
                 } else {
                     botao.setEnabled(false);
                     botao.setToolTipText("Você não tem permissão para editar esta anotação.");
+                    System.out.println("DEBUG (carregarAnotacoesKanban): Botão de anotação DESABILITADO.");
                 }
+                // Adicione cores às anotações com base no status (opcional, para visualização)
+                Color bgColor = Color.WHITE;
+                switch (a.getStatus()) {
+                    case "AFazer": bgColor = STATUS_TODO_COLOR; break;
+                    case "Fazendo": bgColor = STATUS_DOING_COLOR; break;
+                    case "Feito": bgColor = STATUS_DONE_COLOR; break;
+                }
+                botao.setBackground(bgColor);
+                botao.setForeground(TEXT_COLOR_DARK); // Cor do texto do botão da anotação
+                botao.setOpaque(true);
+                botao.setBorder(BorderFactory.createLineBorder(BORDER_COLOR_NEUTRAL, 1));
+                botao.setHorizontalAlignment(SwingConstants.LEFT); // Alinha texto à esquerda
+                botao.setVerticalAlignment(SwingConstants.TOP); // Alinha texto ao topo
+                botao.setPreferredSize(new Dimension(200, 60)); // Tamanho fixo para cada botão
                 
                 switch (a.getStatus()) {
                     case "AFazer" -> panelAFazer.add(botao);
@@ -219,10 +326,15 @@ public class TelaKanban extends JFrame {
     }
 
     private void editarAnotacaoKanban(Anotacao a) {
-        if (!("OWNER".equals(currentUserRole) || "ADMIN".equals(currentUserRole) || "EDITOR".equals(currentUserRole))) {
+        System.out.println("DEBUG (editarAnotacaoKanban): Verificando permissão antes de editar. Papel: " + currentUserRole);
+        boolean canEdit = "Criador(a)".equals(currentUserRole) || "ADMIN".equals(currentUserRole) || "EDITOR".equals(currentUserRole); // Voltou para Criador(a)/ADMIN/EDITOR
+        if (!canEdit) {
             JOptionPane.showMessageDialog(this, "Você não tem permissão para editar anotações nesta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+            System.out.println("DEBUG (editarAnotacaoKanban): Permissão NEGADA para editar.");
             return;
         }
+        System.out.println("DEBUG (editarAnotacaoKanban): Permissão CONCEDIDA para editar.");
+
 
         JTextField titulo = new JTextField(a.getTitulo());
         JTextArea descricao = new JTextArea(a.getDescricao());
@@ -238,90 +350,73 @@ public class TelaKanban extends JFrame {
         panel.add(new JLabel("Status:"));
         panel.add(statusBox);
 
-        String[] tipoListaOptions = {"KANBAN", "COMUM"};
-        JComboBox<String> tipoListBox = new JComboBox<>(tipoListaOptions);
-        tipoListBox.setSelectedItem(currentListType);
-
-        panel.add(new JLabel("Mover para Tipo:"));
-        panel.add(tipoListBox);
+        // Cores para os componentes do diálogo
+        panel.setBackground(BACKGROUND_COLOR_LIGHT);
+        for (Component comp : panel.getComponents()) {
+            if (comp instanceof JLabel) {
+                ((JLabel)comp).setForeground(TEXT_COLOR_DARK);
+            }
+            if (comp instanceof JTextField || comp instanceof JTextArea || comp instanceof JComboBox) {
+                comp.setBackground(Color.WHITE);
+                comp.setForeground(TEXT_COLOR_DARK);
+                ((JComponent)comp).setBorder(BorderFactory.createLineBorder(BORDER_COLOR_NEUTRAL));
+            }
+        }
+        UIManager.put("OptionPane.background", BACKGROUND_COLOR_LIGHT);
+        UIManager.put("Panel.background", BACKGROUND_COLOR_LIGHT);
+        UIManager.put("Button.background", ACCENT_COLOR);
+        UIManager.put("Button.foreground", Color.WHITE);
+        UIManager.put("Button.font", new Font("Arial", Font.BOLD, 12));
 
 
         String[] options = {"Salvar", "Excluir Anotação", "Cancelar"};
 
         int result = JOptionPane.showOptionDialog(this, panel, "Editar Anotação (" + currentListName + ")",
                 JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+        System.out.println("DEBUG (editarAnotacaoKanban): Resultado do JOptionPane: " + result);
+
+        // Resetar UIManager
+        UIManager.put("OptionPane.background", null);
+        UIManager.put("Panel.background", null);
+        UIManager.put("Button.background", null);
+        UIManager.put("Button.foreground", null);
+        UIManager.put("Button.font", null);
+
 
         if (result == 0) { // Clicou em "Salvar"
             a.setTitulo(titulo.getText());
             a.setDescricao(descricao.getText());
             a.setStatus((String) statusBox.getSelectedItem());
-
-            String novoTipoListaSelecionado = (String) tipoListBox.getSelectedItem();
-
-            if (!novoTipoListaSelecionado.equals(currentListType)) {
-                int confirmMove = JOptionPane.showConfirmDialog(this,
-                        "Esta anotação será movida para uma lista do tipo '" + novoTipoListaSelecionado + "'. Deseja continuar?",
-                        "Mover Anotação", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-
-                if (confirmMove == JOptionPane.YES_OPTION) {
-                    anotacaoDAO.excluir(a.getId(), this.currentListId); // Excluir da lista atual
-
-                    UserList targetList = null;
-                    List<UserList> userLists = userListDAO.listarPorUsuario(loggedInUserId);
-                    for(UserList ul : userLists) {
-                        if (ul.getListType().equals(novoTipoListaSelecionado)) {
-                            targetList = ul;
-                            break;
-                        }
-                    }
-
-                    if (targetList == null) {
-                        String newListName = JOptionPane.showInputDialog(this, "Você não tem uma lista '" + novoTipoListaSelecionado + "'. Digite um nome para criar uma nova:", "Criar Nova Lista", JOptionPane.PLAIN_MESSAGE);
-                        if (newListName != null && !newListName.trim().isEmpty()) {
-                            UserList newTargetList = new UserList(loggedInUserId, newListName.trim(), novoTipoListaSelecionado);
-                            int newTargetListId = userListDAO.inserir(newTargetList);
-                            if (newTargetListId != -1) {
-                                targetList = userListDAO.getById(newTargetListId);
-                                JOptionPane.showMessageDialog(this, "Nova lista '" + newListName + "' criada com sucesso!", "Lista Criada", JOptionPane.INFORMATION_MESSAGE);
-                            }
-                        }
-                    }
-
-                    if (targetList != null) {
-                        Anotacao newAnotacao = new Anotacao(a.getTitulo(), a.getDescricao(), a.getStatus(), targetList.getId(), a.getPrioridade(), a.isConcluidaVisual()); 
-                        anotacaoDAO.inserir(newAnotacao);
-                        JOptionPane.showMessageDialog(this, "Anotação movida para a lista '" + targetList.getListName() + "'.", "Anotação Movida", JOptionPane.INFORMATION_MESSAGE);
-                        carregarAnotacoesKanban(); // Recarrega a view atual para remover a anotação
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Não foi possível mover a anotação.", "Erro", JOptionPane.ERROR_MESSAGE);
-                        anotacaoDAO.atualizar(a); // Se não moveu, salva as edições na lista original
-                    }
-
-                } else {
-                    anotacaoDAO.atualizar(a); // Salva as edições na lista original
-                    carregarAnotacoesKanban();
-                }
-
-            } else { // O tipo da lista NÃO mudou, apenas editou a anotação na lista atual
-                a.setListId(currentListId);
-                anotacaoDAO.atualizar(a);
-                carregarAnotacoesKanban(); // Recarrega a view Kanban
-            }
-
+            
+            // Lógica de movimento de tipo de lista REMOVIDA
+            // A anotação continua amarrada à 'currentListId'
+            a.setListId(currentListId); 
+            anotacaoDAO.atualizar(a);
+            carregarAnotacoesKanban();
 
         } else if (result == 1) { // Clicou em "Excluir Anotação"
-            if (!"OWNER".equals(currentUserRole) && !"ADMIN".equals(currentUserRole)) {
+            System.out.println("DEBUG (editarAnotacaoKanban): Verificando permissão para excluir. Papel: " + currentUserRole);
+            boolean canDelete = "Criador(a)".equals(currentUserRole) || "ADMIN".equals(currentUserRole); // Voltou para Criador(a)/ADMIN
+            if (!canDelete) {
                 JOptionPane.showMessageDialog(this, "Você não tem permissão para excluir anotações nesta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+                System.out.println("DEBUG (editarAnotacaoKanban): Permissão NEGADA para excluir.");
                 return;
             }
+            System.out.println("DEBUG (editarAnotacaoKanban): Permissão CONCEDIDA para excluir.");
             
             int confirmExcluir = JOptionPane.showConfirmDialog(this,
                     "Tem certeza que deseja EXCLUIR esta anotação?", "Confirmar Exclusão",
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            System.out.println("DEBUG (editarAnotacaoKanban - Excluir): Confirmação de exclusão: " + (confirmExcluir == JOptionPane.YES_OPTION));
+
             if (confirmExcluir == JOptionPane.YES_OPTION) {
                 anotacaoDAO.excluir(a.getId(), this.currentListId);
                 carregarAnotacoesKanban();
+            } else {
+                System.out.println("DEBUG (editarAnotacaoKanban - Excluir): Exclusão cancelada.");
             }
+        } else {
+            System.out.println("DEBUG (editarAnotacaoKanban): Operação de edição cancelada/fechada.");
         }
     }
 }

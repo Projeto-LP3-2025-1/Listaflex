@@ -4,7 +4,7 @@ package model;
 public class ListCollaborator {
     private int listId;
     private int userId;
-    private String role; // Ex: "OWNER", "ADMIN", "EDITOR", "VIEWER"
+    private String role; // Ex: "Criador(a)", "Administrador(a)", "Editor(a)", "Visualizador(a)"
 
     public ListCollaborator(int listId, int userId, String role) {
         this.listId = listId;

@@ -2,7 +2,7 @@
 package dao;
 
 import model.Anotacao;
-import util.DatabaseConnection; // Corrigido para usar a classe de conexão correta
+import util.DatabaseConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ public class AnotacaoDAO {
         String sql = "INSERT INTO anotacoes (titulo, descricao, status, list_id, prioridade, is_concluida_visual) VALUES (?, ?, ?, ?, ?, ?)";
         System.out.println("DEBUG: Tentando inserir Anotação.");
         System.out.println("DEBUG: Título: " + anotacao.getTitulo() + ", Descrição: " + anotacao.getDescricao() + ", Status: " + anotacao.getStatus() + ", ListID: " + anotacao.getListId() + ", Prioridade: " + anotacao.getPrioridade() + ", ConcluidaVisual: " + anotacao.isConcluidaVisual());
-        try (Connection con = DatabaseConnection.connect(); // Uso correto da conexão
+        try (Connection con = DatabaseConnection.connect();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, anotacao.getTitulo());
             ps.setString(2, anotacao.getDescricao());
@@ -40,7 +40,7 @@ public class AnotacaoDAO {
     public void atualizar(Anotacao anotacao) {
         String sql = "UPDATE anotacoes SET titulo = ?, descricao = ?, status = ?, prioridade = ?, is_concluida_visual = ? WHERE id = ? AND list_id = ?";
         System.out.println("DEBUG: Tentando atualizar Anotação ID: " + anotacao.getId() + ", ListID: " + anotacao.getListId() + ", Prioridade: " + anotacao.getPrioridade() + ", ConcluidaVisual: " + anotacao.isConcluidaVisual());
-        try (Connection con = DatabaseConnection.connect(); // Uso correto da conexão
+        try (Connection con = DatabaseConnection.connect();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, anotacao.getTitulo());
             ps.setString(2, anotacao.getDescricao());
@@ -65,7 +65,7 @@ public class AnotacaoDAO {
     public void excluir(int id, int listId) {
         String sql = "DELETE FROM anotacoes WHERE id = ? AND list_id = ?";
         System.out.println("DEBUG: Tentando excluir Anotação ID: " + id + ", ListID: " + listId);
-        try (Connection con = DatabaseConnection.connect(); // Uso correto da conexão
+        try (Connection con = DatabaseConnection.connect();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.setInt(2, listId);
@@ -81,7 +81,7 @@ public class AnotacaoDAO {
         List<Anotacao> anotacoes = new ArrayList<>();
         String sql = "SELECT id, titulo, descricao, status, list_id, prioridade, is_concluida_visual FROM anotacoes WHERE list_id = ?";
         System.out.println("DEBUG: Executando listar para ListID: " + listId);
-        try (Connection con = DatabaseConnection.connect(); // Uso correto da conexão
+        try (Connection con = DatabaseConnection.connect();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, listId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -107,8 +107,9 @@ public class AnotacaoDAO {
 
     public List<Anotacao> listarEOrdenarPorPrioridade(int listId) {
         List<Anotacao> anotacoes = new ArrayList<>();
-        String sql = "SELECT id, titulo, descricao, status, list_id, prioridade, is_concluida_visual FROM anotacoes WHERE list_id = ? ORDER BY FIELD(prioridade, 'MUITO_IMPORTANTE', 'IMPORTANTE', 'POUCO_IMPORTANTE')";
-        try (Connection con = DatabaseConnection.connect(); // Uso correto da conexão
+        // ORDEM: Muito importante > Importante > Pouco importante
+        String sql = "SELECT id, titulo, descricao, status, list_id, prioridade, is_concluida_visual FROM anotacoes WHERE list_id = ? ORDER BY FIELD(prioridade, 'Muito importante', 'Importante', 'Pouco importante')";
+        try (Connection con = DatabaseConnection.connect();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, listId);
             try (ResultSet rs = ps.executeQuery()) {

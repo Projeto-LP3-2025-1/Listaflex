@@ -2,7 +2,7 @@
 package dao;
 
 import model.ListCollaborator;
-import model.UserList; // Importar UserList
+import model.UserList;
 import util.DatabaseConnection;
 
 import java.sql.Connection;
@@ -61,17 +61,17 @@ public class ListCollaboratorDAO {
         String sql = "UPDATE list_collaborators SET role = ? WHERE list_id = ? AND user_id = ?";
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, newRole);
-            stmt.setInt(2, listId);
-            stmt.setInt(3, userId);
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-        } catch (SQLException e) {
-            System.err.println("Erro ao atualizar papel do colaborador: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+                stmt.setString(1, newRole);
+                stmt.setInt(2, listId);
+                stmt.setInt(3, userId);
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
+            } catch (SQLException e) {
+                System.err.println("Erro ao atualizar papel do colaborador: " + e.getMessage());
+                e.printStackTrace();
+                return false;
+            }
         }
-    }
 
     public boolean removeCollaborator(int listId, int userId) {
         String sql = "DELETE FROM list_collaborators WHERE list_id = ? AND user_id = ?";
@@ -107,15 +107,13 @@ public class ListCollaboratorDAO {
         return role;
     }
 
-    // Busca todas as listas que um usuário está associado (como owner ou colaborador)
     public List<UserList> getListsForUser(int userId) {
         List<UserList> userLists = new ArrayList<>();
-        // Junta user_lists com list_collaborators para obter todas as listas
-        // onde o usuário é OWNER ou está listado como colaborador
         String sql = "SELECT DISTINCT ul.id, ul.user_id, ul.list_name, ul.list_type " +
                      "FROM user_lists ul " +
                      "JOIN list_collaborators lc ON ul.id = lc.list_id " +
-                     "WHERE lc.user_id = ?";
+                     "" +
+                     "WHERE lc.user_id = ?"; // Removido 'ul.user_id = ? OR' para evitar listar duas vezes para o 
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
@@ -123,7 +121,7 @@ public class ListCollaboratorDAO {
                 while (rs.next()) {
                     userLists.add(new UserList(
                         rs.getInt("id"),
-                        rs.getInt("user_id"), // Este user_id é o owner_id da lista, não o do colaborador
+                        rs.getInt("user_id"),
                         rs.getString("list_name"),
                         rs.getString("list_type")
                     ));

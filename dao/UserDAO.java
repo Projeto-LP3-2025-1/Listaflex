@@ -9,7 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class UserDAO { // INÍCIO DA CLASSE USERDAO
+public class UserDAO {
 
     public boolean registerUser(User user) {
         String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
@@ -97,5 +97,5 @@ public class UserDAO { // INÍCIO DA CLASSE USERDAO
         }
         return null;
     }
-} // FIM DA CLASSE USERDAO
+}
 // END OF FILE: UserDAO.java

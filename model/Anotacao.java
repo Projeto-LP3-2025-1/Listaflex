@@ -7,25 +7,31 @@ public class Anotacao {
     private String descricao;
     private String status; // Usado para Kanban (AFazer, Fazendo, Feito). Pode ser vazio para Comum.
     private int listId; // ID da lista a que pertence (de user_lists)
-    private String prioridade;
+    private String prioridade; // Valores serão "Pouco importante", "Importante", "Muito importante"
     private boolean isConcluidaVisual; // Persistido no BD para o estado do checkbox
 
     // Construtor para criar novas anotações (sem ID, com isConcluidaVisual padrão)
-    public Anotacao(String titulo, String descricao, String status, int listId, String prioridade, boolean isConcluidaVisual) { // <-- NOVO PARÂMETRO AQUI
-    this.titulo = titulo;
-    this.descricao = descricao;
-    this.status = status;
-    this.listId = listId;
-    this.prioridade = prioridade;
-    this.isConcluidaVisual = isConcluidaVisual; // <-- ATRIBUI O VALOR PASSADO
-}
+    public Anotacao(String titulo, String descricao, String status, int listId, String prioridade) {
+        this.titulo = titulo;
+        this.descricao = descricao;
+        this.status = status;
+        this.listId = listId;
+        this.prioridade = prioridade;
+        this.isConcluidaVisual = false; // Valor padrão inicial para novas anotações (não concluída)
+    }
 
-// Construtor completo (para carregar do BD) - este já estava certo com 7 parâmetros
+    // Construtor com isConcluidaVisual explícito (para criação ou movimento)
+    public Anotacao(String titulo, String descricao, String status, int listId, String prioridade, boolean isConcluidaVisual) {
+        this(titulo, descricao, status, listId, prioridade); // Chama o construtor acima
+        this.isConcluidaVisual = isConcluidaVisual; // Atribui o valor passado
+    }
+
+    // Construtor completo (para carregar do BD)
     public Anotacao(int id, String titulo, String descricao, String status, int listId, String prioridade, boolean isConcluidaVisual) {
-    this(titulo, descricao, status, listId, prioridade, isConcluidaVisual); // Chama o construtor acima com todos os valores
-    this.id = id;
-    // this.isConcluidaVisual = isConcluidaVisual; // Essa linha não é mais necessária aqui, pois o construtor acima já faz
-}
+        this(titulo, descricao, status, listId, prioridade, isConcluidaVisual); // Chama o construtor de 6 parâmetros
+        this.id = id;
+    }
+
     // Getters
     public int getId() { return id; }
     public String getTitulo() { return titulo; }

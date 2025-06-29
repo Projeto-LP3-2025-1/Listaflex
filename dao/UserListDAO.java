@@ -31,8 +31,8 @@ public class UserListDAO {
                     if (rs.next()) {
                         generatedId = rs.getInt(1);
                         userList.setId(generatedId);
-                        // CORREÇÃO: Chamar addCollaborator para definir o criador como OWNER
-                        collaboratorDAO.addCollaborator(new ListCollaborator(generatedId, userList.getUserId(), "OWNER"));
+                        // CORREÇÃO: Chamar addCollaborator para definir o criador como 
+                        collaboratorDAO.addCollaborator(new ListCollaborator(generatedId, userList.getUserId(), "Criador(a)"));
                     }
                 }
             }
@@ -43,7 +43,7 @@ public class UserListDAO {
         return generatedId;
     }
 
-    // Listar listas que um usuário está associado (como owner ou colaborador)
+    // Listar listas que um usuário está associado (como  ou colaborador)
     public List<UserList> listarPorUsuario(int userId) {
         return collaboratorDAO.getListsForUser(userId);
     }
@@ -55,7 +55,7 @@ public class UserListDAO {
             stmt.setString(1, userList.getListName());
             stmt.setString(2, userList.getListType());
             stmt.setInt(3, userList.getId());
-            stmt.setInt(4, userList.getUserId()); // O owner da lista não muda
+            stmt.setInt(4, userList.getUserId()); // O  da lista não muda
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {

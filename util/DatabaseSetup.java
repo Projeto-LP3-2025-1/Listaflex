@@ -43,7 +43,7 @@ public static void criarTabelaListCollaborators() {
     String sql = "CREATE TABLE IF NOT EXISTS list_collaborators (" +
                  "list_id INT NOT NULL, " +
                  "user_id INT NOT NULL, " +
-                 "role VARCHAR(20) NOT NULL, " + // Ex: 'OWNER', 'ADMIN', 'EDITOR', 'VIEWER'
+                 "role VARCHAR(20) NOT NULL, " + // Ex: '', 'ADMIN', 'EDITOR', 'VIEWER'
                  "PRIMARY KEY (list_id, user_id), " + // Chave primária composta
                  "FOREIGN KEY (list_id) REFERENCES user_lists(id) ON DELETE CASCADE, " + // Refere a lista
                  "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE" + // Refere o usuário

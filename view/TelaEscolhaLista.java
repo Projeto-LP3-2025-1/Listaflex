@@ -18,6 +18,14 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class TelaEscolhaLista extends JFrame {
+    // --- CONSTANTES DE CORES DA PALETA PROFISSIONAL ---
+    private static final Color PRIMARY_COLOR = Color.decode("#2C3E50"); // Azul Marinho Escuro
+    private static final Color ACCENT_COLOR = Color.decode("#3498DB"); // Azul Céu
+    private static final Color BACKGROUND_COLOR_LIGHT = Color.decode("#ECF0F1"); // Fundo claro
+    private static final Color TEXT_COLOR_DARK = Color.decode("#34495E"); // Texto principal
+    private static final Color BORDER_COLOR_NEUTRAL = Color.decode("#BDC3C7"); // Bordas
+    // --- FIM CONSTANTES DE CORES ---
+
     private int loggedInUserId;
     private UserListDAO userListDAO;
     private ListCollaboratorDAO collaboratorDAO;
@@ -39,14 +47,23 @@ public class TelaEscolhaLista extends JFrame {
         setLocationRelativeTo(null);
 
         setLayout(new BorderLayout());
+        getContentPane().setBackground(BACKGROUND_COLOR_LIGHT); // Fundo geral do frame
 
         // Painel Superior: Título e Botão de Deslogar
         JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(PRIMARY_COLOR); // Fundo do painel superior
         JLabel titleLabel = new JLabel("Minhas Listas", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(Color.WHITE); // Texto branco
         topPanel.add(titleLabel, BorderLayout.CENTER);
 
         JButton btnDeslogar = new JButton("Deslogar");
+        btnDeslogar.setBackground(ACCENT_COLOR); // Cor do botão
+        btnDeslogar.setForeground(Color.WHITE);
+        btnDeslogar.setFont(new Font("Arial", Font.BOLD, 12));
+        btnDeslogar.setOpaque(true);
+        btnDeslogar.setBorderPainted(false);
+        btnDeslogar.setFocusPainted(false);
         btnDeslogar.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(this,
                     "Tem certeza que deseja deslogar?", "Deslogar",
@@ -64,6 +81,9 @@ public class TelaEscolhaLista extends JFrame {
         userListsJList = new JList<>(listModel);
         userListsJList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         userListsJList.setFont(new Font("Arial", Font.PLAIN, 16));
+        userListsJList.setBackground(Color.WHITE); // Fundo da lista
+        userListsJList.setBorder(BorderFactory.createLineBorder(BORDER_COLOR_NEUTRAL)); // Borda da lista
+
         userListsJList.setCellRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -73,7 +93,12 @@ public class TelaEscolhaLista extends JFrame {
                 if (role == null || role.isEmpty()) {
                      role = "Desconhecido"; // Fallback caso não encontre o papel
                 }
-                setText(ul.getListName() + " (" + ul.getListType() + ") - Papel: " + role);
+                setText(ul.getListName() + " (" + ul.getListType() + ") - Papel: " + role); // Exibe o papel
+                setForeground(TEXT_COLOR_DARK); // Cor do texto da lista
+                if (isSelected) {
+                    setBackground(ACCENT_COLOR); // Cor de seleção
+                    setForeground(Color.WHITE);
+                }
                 return this;
             }
         });
@@ -94,9 +119,16 @@ public class TelaEscolhaLista extends JFrame {
         add(new JScrollPane(userListsJList), BorderLayout.CENTER);
 
         // Painel Inferior: Botões de Ação
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10)); // <-- Este é o painel dos botões
-        
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        bottomPanel.setBackground(BACKGROUND_COLOR_LIGHT); // Fundo do painel de botões
+
         JButton btnAbrirLista = new JButton("Abrir Lista");
+        btnAbrirLista.setBackground(PRIMARY_COLOR);
+        btnAbrirLista.setForeground(Color.WHITE);
+        btnAbrirLista.setFont(new Font("Arial", Font.BOLD, 14));
+        btnAbrirLista.setOpaque(true);
+        btnAbrirLista.setBorderPainted(false);
+        btnAbrirLista.setFocusPainted(false);
         btnAbrirLista.addActionListener(e -> {
             UserList selectedList = userListsJList.getSelectedValue();
             if (selectedList == null || selectedList.getId() == 0 || selectedList.getListName().equals("Nenhuma lista encontrada. Crie uma!")) {
@@ -105,25 +137,49 @@ public class TelaEscolhaLista extends JFrame {
             }
             abrirListaSelecionada(selectedList);
         });
-        bottomPanel.add(btnAbrirLista); // <-- O botão é ADICIONADO AQUI
+        bottomPanel.add(btnAbrirLista);
 
         JButton btnCriarNovaLista = new JButton("Criar Nova Lista");
+        btnCriarNovaLista.setBackground(ACCENT_COLOR); // Cor de destaque
+        btnCriarNovaLista.setForeground(Color.WHITE);
+        btnCriarNovaLista.setFont(new Font("Arial", Font.BOLD, 14));
+        btnCriarNovaLista.setOpaque(true);
+        btnCriarNovaLista.setBorderPainted(false);
+        btnCriarNovaLista.setFocusPainted(false);
         btnCriarNovaLista.addActionListener(e -> criarNovaLista());
-        bottomPanel.add(btnCriarNovaLista); // <-- O botão é ADICIONADO AQUI
+        bottomPanel.add(btnCriarNovaLista);
 
         JButton btnEditarLista = new JButton("Editar Lista");
+        btnEditarLista.setBackground(ACCENT_COLOR);
+        btnEditarLista.setForeground(Color.WHITE);
+        btnEditarLista.setFont(new Font("Arial", Font.BOLD, 14));
+        btnEditarLista.setOpaque(true);
+        btnEditarLista.setBorderPainted(false);
+        btnEditarLista.setFocusPainted(false);
         btnEditarLista.addActionListener(e -> editarListaSelecionada());
-        bottomPanel.add(btnEditarLista); // <-- O botão é ADICIONADO AQUI
+        bottomPanel.add(btnEditarLista);
 
         JButton btnExcluirLista = new JButton("Excluir Lista");
+        btnExcluirLista.setBackground(ACCENT_COLOR);
+        btnExcluirLista.setForeground(Color.WHITE);
+        btnExcluirLista.setFont(new Font("Arial", Font.BOLD, 14));
+        btnExcluirLista.setOpaque(true);
+        btnExcluirLista.setBorderPainted(false);
+        btnExcluirLista.setFocusPainted(false);
         btnExcluirLista.addActionListener(e -> excluirListaSelecionada());
-        bottomPanel.add(btnExcluirLista); // <-- O botão é ADICIONADO AQUI
+        bottomPanel.add(btnExcluirLista);
 
         JButton btnGerenciarColaboradores = new JButton("Gerenciar Colaboradores");
+        btnGerenciarColaboradores.setBackground(ACCENT_COLOR);
+        btnGerenciarColaboradores.setForeground(Color.WHITE);
+        btnGerenciarColaboradores.setFont(new Font("Arial", Font.BOLD, 14));
+        btnGerenciarColaboradores.setOpaque(true);
+        btnGerenciarColaboradores.setBorderPainted(false);
+        btnGerenciarColaboradores.setFocusPainted(false);
         btnGerenciarColaboradores.addActionListener(e -> gerenciarColaboradores());
-        bottomPanel.add(btnGerenciarColaboradores); // <-- O botão é ADICIONADO AQUI
+        bottomPanel.add(btnGerenciarColaboradores);
 
-        add(bottomPanel, BorderLayout.SOUTH); // <-- O painel com os botões é ADICIONADO ao frame
+        add(bottomPanel, BorderLayout.SOUTH);
 
         carregarListas();
         System.out.println("DEBUG: TelaEscolhaLista carregou listas e está tentando ser visível.");
@@ -146,17 +202,41 @@ public class TelaEscolhaLista extends JFrame {
 
     private void criarNovaLista() {
         JTextField listNameField = new JTextField(20);
+        listNameField.setBackground(Color.WHITE);
+        listNameField.setForeground(TEXT_COLOR_DARK);
+        listNameField.setBorder(BorderFactory.createLineBorder(BORDER_COLOR_NEUTRAL));
+
         String[] listTypes = {"KANBAN", "COMUM"};
         JComboBox<String> listTypeBox = new JComboBox<>(listTypes);
+        listTypeBox.setBackground(Color.WHITE);
+        listTypeBox.setForeground(TEXT_COLOR_DARK);
+        listTypeBox.setBorder(BorderFactory.createLineBorder(BORDER_COLOR_NEUTRAL));
 
         JPanel panel = new JPanel(new GridLayout(0, 1));
-        panel.add(new JLabel("Nome da Lista:"));
+        panel.setBackground(BACKGROUND_COLOR_LIGHT); // Fundo do painel do diálogo
+        panel.add(new JLabel("Nome da Lista:", SwingConstants.LEFT)).setForeground(TEXT_COLOR_DARK); // Label com cor
         panel.add(listNameField);
-        panel.add(new JLabel("Tipo de Lista:"));
+        panel.add(new JLabel("Tipo de Lista:", SwingConstants.LEFT)).setForeground(TEXT_COLOR_DARK); // Label com cor
         panel.add(listTypeBox);
+
+        // Define a cor de fundo do JOptionPane em si (se possível, depende do L&F)
+        UIManager.put("OptionPane.background", BACKGROUND_COLOR_LIGHT);
+        UIManager.put("Panel.background", BACKGROUND_COLOR_LIGHT);
+        UIManager.put("Button.background", ACCENT_COLOR); // Botões do JOptionPane
+        UIManager.put("Button.foreground", Color.WHITE);
+        UIManager.put("Button.font", new Font("Arial", Font.BOLD, 12));
+
 
         int result = JOptionPane.showConfirmDialog(this, panel, "Criar Nova Lista",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        // Reseta as propriedades do UIManager após o diálogo para não afetar outros componentes
+        UIManager.put("OptionPane.background", null);
+        UIManager.put("Panel.background", null);
+        UIManager.put("Button.background", null);
+        UIManager.put("Button.foreground", null);
+        UIManager.put("Button.font", null);
+
 
         if (result == JOptionPane.OK_OPTION) {
             String listName = listNameField.getText().trim();
@@ -167,7 +247,7 @@ public class TelaEscolhaLista extends JFrame {
                 return;
             }
             UserList newUserList = new UserList(loggedInUserId, listName, listType);
-            int newId = userListDAO.inserir(newUserList); // Inserir UserList e definir owner
+            int newId = userListDAO.inserir(newUserList);
             if (newId != -1) {
                 JOptionPane.showMessageDialog(this, "Lista criada com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
                 carregarListas();
@@ -185,25 +265,50 @@ public class TelaEscolhaLista extends JFrame {
         }
 
         String userRole = collaboratorDAO.getUserRoleInList(selectedList.getId(), loggedInUserId);
-        if (!"OWNER".equals(userRole) && !"ADMIN".equals(userRole)) {
+        if (!"Criador(a)".equals(userRole) && !"ADMIN".equals(userRole)) {
             JOptionPane.showMessageDialog(this, "Você não tem permissão para editar esta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         JTextField listNameField = new JTextField(selectedList.getListName(), 20);
+        listNameField.setBackground(Color.WHITE);
+        listNameField.setForeground(TEXT_COLOR_DARK);
+        listNameField.setBorder(BorderFactory.createLineBorder(BORDER_COLOR_NEUTRAL));
+
         String[] listTypes = {"KANBAN", "COMUM"};
         JComboBox<String> listTypeBox = new JComboBox<>(listTypes);
         listTypeBox.setSelectedItem(selectedList.getListType());
         listTypeBox.setEnabled(false); // Tipo de lista não pode ser alterado após a criação
+        listTypeBox.setBackground(Color.WHITE);
+        listTypeBox.setForeground(TEXT_COLOR_DARK);
+        listTypeBox.setBorder(BorderFactory.createLineBorder(BORDER_COLOR_NEUTRAL));
+
 
         JPanel panel = new JPanel(new GridLayout(0, 1));
-        panel.add(new JLabel("Nome da Lista:"));
+        panel.setBackground(BACKGROUND_COLOR_LIGHT); // Fundo do painel do diálogo
+        panel.add(new JLabel("Nome da Lista:", SwingConstants.LEFT)).setForeground(TEXT_COLOR_DARK);
         panel.add(listNameField);
-        panel.add(new JLabel("Tipo de Lista:"));
+        panel.add(new JLabel("Tipo de Lista:", SwingConstants.LEFT)).setForeground(TEXT_COLOR_DARK);
         panel.add(listTypeBox);
+
+        // Define a cor de fundo do JOptionPane em si
+        UIManager.put("OptionPane.background", BACKGROUND_COLOR_LIGHT);
+        UIManager.put("Panel.background", BACKGROUND_COLOR_LIGHT);
+        UIManager.put("Button.background", ACCENT_COLOR);
+        UIManager.put("Button.foreground", Color.WHITE);
+        UIManager.put("Button.font", new Font("Arial", Font.BOLD, 12));
+
 
         int result = JOptionPane.showConfirmDialog(this, panel, "Editar Lista",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        // Reseta as propriedades do UIManager
+        UIManager.put("OptionPane.background", null);
+        UIManager.put("Panel.background", null);
+        UIManager.put("Button.background", null);
+        UIManager.put("Button.foreground", null);
+        UIManager.put("Button.font", null);
+
 
         if (result == JOptionPane.OK_OPTION) {
             String newListName = listNameField.getText().trim();
@@ -230,7 +335,7 @@ public class TelaEscolhaLista extends JFrame {
         }
 
         String userRole = collaboratorDAO.getUserRoleInList(selectedList.getId(), loggedInUserId);
-        if (!"OWNER".equals(userRole)) { // Apenas o OWNER pode excluir a lista
+        if (!"Criador(a)".equals(userRole)) { // Apenas o Criador(a) pode excluir a lista
             JOptionPane.showMessageDialog(this, "Você não tem permissão para excluir esta lista. Apenas o criador pode excluir.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -256,16 +361,15 @@ public class TelaEscolhaLista extends JFrame {
         }
         
         String userRole = collaboratorDAO.getUserRoleInList(userList.getId(), loggedInUserId);
-        if (userRole == null) { // Se não encontrou o papel, o usuário não tem acesso
+        if (userRole == null) {
             JOptionPane.showMessageDialog(this, "Você não tem acesso a esta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        dispose(); // Fecha a tela de gerenciamento de listas
+        dispose();
         new TelaKanban(loggedInUserId, userList.getListType(), userList.getId(), userList.getListName());
     }
 
-    // Este é o método para gerenciar colaboradores, ele abre a TelaGerenciarColaboradores
     private void gerenciarColaboradores() {
         UserList selectedList = userListsJList.getSelectedValue();
         if (selectedList == null || selectedList.getId() == 0 || selectedList.getListName().equals("Nenhuma lista encontrada. Crie uma!")) {
@@ -274,12 +378,11 @@ public class TelaEscolhaLista extends JFrame {
         }
 
         String userRole = collaboratorDAO.getUserRoleInList(selectedList.getId(), loggedInUserId);
-        if (!"OWNER".equals(userRole) && !"ADMIN".equals(userRole)) { // Apenas OWNER ou ADMIN podem gerenciar
+        if (!"Criador(a)".equals(userRole) && !"ADMIN".equals(userRole)) {
             JOptionPane.showMessageDialog(this, "Você não tem permissão para gerenciar colaboradores desta lista.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Se a permissão é OK, abre a nova tela de gerenciamento
         new TelaGerenciarColaboradores(this, selectedList, loggedInUserId);
     }
 }
