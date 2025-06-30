@@ -50,7 +50,7 @@
             <configuration>
                 <archive>
                     <manifest>
-            <mainClass>src.main.java.listaflex.Main</mainClass>
+            <mainClass>project.Main</mainClass>
                     </manifest>
                 </archive>
                 <!-- Type of jar to create -->

@@ -35,7 +35,11 @@ mvn clean package
 cp target/listaflex-1.0-SNAPSHOT-jar-with-dependencies.jar target/listaflex.jar
 ```
 
-Após isso, só clicar no ícone **listaflex.jar** na pasta *target* para abrir o programa.
+Após isso, só clicar no ícone **listaflex.jar** na pasta *target* para abrir o programa, ou rodar:
+
+```
+java -jar target/listaflex.jar
+```
 
 ## Relatório
 
